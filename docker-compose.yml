@@ -1,0 +1,78 @@
+version: '3.8'
+
+services:
+  # PostgreSQL 数据库
+  postgres:
+    image: postgres:16-alpine
+    container_name: fluent-life-db
+    environment:
+      POSTGRES_USER: fluent_life
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-your_password_here}
+      POSTGRES_DB: fluent_life
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fluent_life"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - fluent-life-network
+    restart: unless-stopped
+
+  # 后端 API 服务
+  backend:
+    build:
+      context: ./fluent-life-api
+      dockerfile: Dockerfile
+    container_name: fluent-life-api
+    environment:
+      ENVIRONMENT: production
+      PORT: "8081"
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_USER: fluent_life
+      DB_PASSWORD: ${DB_PASSWORD:-your_password_here}
+      DB_NAME: fluent_life
+      DB_SSLMODE: disable
+      JWT_SECRET: ${JWT_SECRET:-your-secret-key-change-in-production}
+      JWT_EXPIRATION: 24h
+    ports:
+      - "8081:8081"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - fluent-life-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8081/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # 前端服务
+  frontend:
+    build:
+      context: ./fluent-life-frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8081/api/v1}
+    container_name: fluent-life-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - fluent-life-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+
+networks:
+  fluent-life-network:
+    driver: bridge
+
