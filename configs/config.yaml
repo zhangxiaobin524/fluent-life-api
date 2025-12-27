@@ -1,0 +1,26 @@
+ENVIRONMENT: development
+PORT: "8081"
+
+DB_HOST: localhost
+DB_PORT: "5432"
+DB_USER: zhangxiaobin
+DB_PASSWORD: ""
+DB_NAME: fluent_life
+DB_SSLMODE: disable
+
+jwt:
+  secret: your-secret-key-change-in-production
+  expiration: 24h
+
+code:
+  expiration: 5m
+
+gemini:
+  api_key: ""
+
+sms:
+  provider: ""
+
+email:
+  provider: ""
+
