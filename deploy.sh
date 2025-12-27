@@ -28,13 +28,20 @@ fi
 # 检查环境变量文件
 if [ ! -f .env ]; then
     echo -e "${YELLOW}⚠️  未找到 .env 文件，正在创建示例文件...${NC}"
-    cp .env.example .env
+    if [ -f .env.example ]; then
+        cp .env.example .env
+    else
+        echo -e "${RED}❌ .env.example 文件不存在${NC}"
+        exit 1
+    fi
     echo -e "${YELLOW}⚠️  请编辑 .env 文件设置正确的环境变量${NC}"
     exit 1
 fi
 
-# 加载环境变量
-export $(cat .env | grep -v '^#' | xargs)
+# 加载环境变量（Docker Compose 会自动读取 .env 文件，但为了确保，我们也导出）
+set -a
+source .env
+set +a
 
 # 停止旧容器
 echo -e "${YELLOW}🛑 停止旧容器...${NC}"
