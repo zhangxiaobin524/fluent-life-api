@@ -19,8 +19,12 @@ if ! command -v docker &> /dev/null; then
     exit 1
 fi
 
-# 检查 Docker Compose 是否安装
-if ! command -v docker-compose &> /dev/null; then
+# 检查 Docker Compose 是否安装（优先使用 docker compose v2）
+if command -v docker &> /dev/null && docker compose version &> /dev/null; then
+    COMPOSE_CMD="docker compose"
+elif command -v docker-compose &> /dev/null; then
+    COMPOSE_CMD="docker-compose"
+else
     echo -e "${RED}❌ Docker Compose 未安装，请先安装 Docker Compose${NC}"
     exit 1
 fi
@@ -45,23 +49,23 @@ set +a
 
 # 停止旧容器
 echo -e "${YELLOW}🛑 停止旧容器...${NC}"
-docker-compose down || true
+$COMPOSE_CMD down || true
 
 # 清理旧镜像（可选）
 read -p "是否清理旧镜像？(y/N): " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
     echo -e "${YELLOW}🧹 清理旧镜像...${NC}"
-    docker-compose down --rmi all || true
+    $COMPOSE_CMD down --rmi all || true
 fi
 
 # 构建镜像
 echo -e "${YELLOW}🔨 构建 Docker 镜像...${NC}"
-docker-compose build --no-cache
+$COMPOSE_CMD build --no-cache
 
 # 启动服务
 echo -e "${YELLOW}🚀 启动服务...${NC}"
-docker-compose up -d
+$COMPOSE_CMD up -d
 
 # 等待服务启动
 echo -e "${YELLOW}⏳ 等待服务启动...${NC}"
@@ -69,7 +73,7 @@ sleep 10
 
 # 检查服务状态
 echo -e "${YELLOW}📊 检查服务状态...${NC}"
-docker-compose ps
+$COMPOSE_CMD ps
 
 # 检查健康状态
 echo -e "${YELLOW}🏥 检查健康状态...${NC}"
@@ -90,7 +94,7 @@ else
 fi
 
 # 显示日志
-echo -e "${GREEN}📋 查看日志: docker-compose logs -f${NC}"
+echo -e "${GREEN}📋 查看日志: $COMPOSE_CMD logs -f${NC}"
 echo -e "${GREEN}✅ 部署完成！${NC}"
 echo ""
 echo "访问地址:"
