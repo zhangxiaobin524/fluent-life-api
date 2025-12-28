@@ -95,3 +95,4 @@ docker exec fluent-life-frontend cat /usr/share/nginx/html/assets/*.js | grep -o
 3. **必须重新构建**：修改 `.env` 后，必须重新构建前端镜像才能生效
 4. **使用 --no-cache**：确保使用新的环境变量，建议使用 `--no-cache` 重新构建
 
+
