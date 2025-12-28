@@ -157,7 +157,7 @@ func (h *WebSocketHandler) HandleWebSocket(c *gin.Context) {
 					// 检查数据库中的成员数
 					var dbMemberCount int64
 					h.db.Model(&models.PracticeRoomMember{}).Where("room_id = ?", roomID).Count(&dbMemberCount)
-					
+
 					// 如果 Hub 和数据库都没有成员了，关闭房间
 					if hubMemberCount == 0 && dbMemberCount == 0 {
 						room.IsActive = false

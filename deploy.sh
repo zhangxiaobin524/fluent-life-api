@@ -34,12 +34,34 @@ if [ ! -f .env ]; then
     echo -e "${YELLOW}⚠️  未找到 .env 文件，正在创建示例文件...${NC}"
     if [ -f .env.example ]; then
         cp .env.example .env
+        # 自动检测服务器IP并设置 VITE_API_BASE_URL
+        SERVER_IP=$(hostname -I | awk '{print $1}' || curl -s ifconfig.me)
+        if [ -n "$SERVER_IP" ]; then
+            sed -i "s|VITE_API_BASE_URL=.*|VITE_API_BASE_URL=http://${SERVER_IP}:8081/api/v1|g" .env
+            echo -e "${GREEN}✅ 已自动设置 VITE_API_BASE_URL=http://${SERVER_IP}:8081/api/v1${NC}"
+        fi
     else
         echo -e "${RED}❌ .env.example 文件不存在${NC}"
         exit 1
     fi
-    echo -e "${YELLOW}⚠️  请编辑 .env 文件设置正确的环境变量${NC}"
-    exit 1
+    echo -e "${YELLOW}⚠️  请检查 .env 文件中的配置是否正确${NC}"
+fi
+
+# 检查 VITE_API_BASE_URL 是否包含占位符
+if grep -q "your-domain.com" .env 2>/dev/null; then
+    echo -e "${YELLOW}⚠️  检测到 .env 文件中包含占位符 'your-domain.com'${NC}"
+    SERVER_IP=$(hostname -I | awk '{print $1}' || curl -s ifconfig.me)
+    if [ -n "$SERVER_IP" ]; then
+        read -p "是否自动替换为服务器IP (${SERVER_IP})? (Y/n): " -n 1 -r
+        echo
+        if [[ ! $REPLY =~ ^[Nn]$ ]]; then
+            sed -i "s|VITE_API_BASE_URL=.*your-domain.com.*|VITE_API_BASE_URL=http://${SERVER_IP}:8081/api/v1|g" .env
+            echo -e "${GREEN}✅ 已自动更新 VITE_API_BASE_URL=http://${SERVER_IP}:8081/api/v1${NC}"
+        else
+            echo -e "${YELLOW}⚠️  请手动编辑 .env 文件，修改 VITE_API_BASE_URL${NC}"
+            exit 1
+        fi
+    fi
 fi
 
 # 加载环境变量（Docker Compose 会自动读取 .env 文件，但为了确保，我们也导出）
