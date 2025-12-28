@@ -20,6 +20,7 @@ const (
 	MessageTypeMicRequest     = "mic_request"
 	MessageTypeMicApprove     = "mic_approve"
 	MessageTypeMicApproved    = "mic_approved"
+	MessageTypeMicReject      = "mic_reject"
 	MessageTypeMemberUpdate   = "member_update"
 	MessageTypeRoomUpdate     = "room_update"
 	MessageTypeRoomCreated    = "room_created"
@@ -105,26 +106,55 @@ func (h *RoomHub) Run() {
 			}, client)
 
 		case client := <-h.Unregister:
+			roomID := client.RoomID
+			userID := client.UserID
+			username := client.Username
 			h.Mutex.Lock()
-			if room, ok := h.Rooms[client.RoomID]; ok {
+			if room, ok := h.Rooms[roomID]; ok {
 				if _, ok := room[client]; ok {
 					delete(room, client)
 					close(client.Send)
-					if len(room) == 0 {
-						delete(h.Rooms, client.RoomID)
+					remainingCount := len(room)
+					shouldDeleteRoom := remainingCount == 0
+					if shouldDeleteRoom {
+						delete(h.Rooms, roomID)
 					}
-				}
-			}
-			h.Mutex.Unlock()
+					h.Mutex.Unlock()
 
-			// 通知其他成员有成员离开
-			h.broadcastToRoom(client.RoomID, Message{
-				Type:     MessageTypeMemberUpdate,
-				RoomID:   client.RoomID,
-				UserID:   client.UserID,
-				Username: client.Username,
-				Data:     map[string]interface{}{"action": "leave"},
-			}, nil)
+					// 通知其他成员有成员离开
+					if remainingCount > 0 {
+						h.broadcastToRoom(roomID, Message{
+							Type:     MessageTypeMemberUpdate,
+							RoomID:   roomID,
+							UserID:   userID,
+							Username: username,
+							Data:     map[string]interface{}{"action": "leave", "remaining_count": remainingCount},
+						}, nil)
+					}
+
+					// 如果房间内没有在线成员了（WebSocket连接），立即关闭房间并广播
+					if shouldDeleteRoom {
+						// 调用 OnLeave 回调，清理数据库记录
+						if client.OnLeave != nil {
+							go client.OnLeave()
+						}
+						
+						// 广播房间关闭消息给所有全局连接
+						h.broadcastToAll(Message{
+							Type:      MessageTypeRoomDeleted,
+							RoomID:    roomID,
+							UserID:    userID,
+							Username:  username,
+							Data:      map[string]interface{}{"room_id": roomID},
+							Timestamp: time.Now().Unix(),
+						})
+					}
+				} else {
+					h.Mutex.Unlock()
+				}
+			} else {
+				h.Mutex.Unlock()
+			}
 
 		case message := <-h.Broadcast:
 			h.broadcastToRoom(message.RoomID, message, nil)
@@ -274,6 +304,22 @@ func (c *Client) ReadPump() {
 					c.Hub.sendToUser(approvedMessage, c)
 					// 同时广播给房间内其他成员（让他们知道有人被批准了）
 					c.Hub.broadcastToRoom(c.RoomID, approvedMessage, c)
+				}
+			}
+		case MessageTypeMicReject:
+			// mic_reject 消息：发送给被拒绝的用户
+			if data, ok := message.Data.(map[string]interface{}); ok {
+				if targetUserID, ok := data["target_user_id"].(string); ok {
+					rejectMessage := Message{
+						Type:      MessageTypeMicReject,
+						RoomID:    c.RoomID,
+						UserID:    targetUserID,
+						Username:  c.Username,
+						AvatarURL: c.AvatarURL,
+						Data:      map[string]interface{}{"user_id": targetUserID},
+						Timestamp: time.Now().Unix(),
+					}
+					c.Hub.sendToUser(rejectMessage, c)
 				}
 			}
 		case MessageTypeMicOn, MessageTypeMicOff, MessageTypeMicMute, MessageTypeMicRequest, MessageTypeMicApproved:

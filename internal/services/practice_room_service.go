@@ -97,14 +97,24 @@ func (s *PracticeRoomService) JoinRoom(roomID, userID uuid.UUID) error {
 	// 检查是否已经是成员
 	var existingMember models.PracticeRoomMember
 	if err := s.db.Where("room_id = ? AND user_id = ?", roomID, userID).First(&existingMember).Error; err == nil {
+		// 如果用户是房间创建者，确保是房主
+		if room.UserID == userID && !existingMember.IsHost {
+			existingMember.IsHost = true
+			if err := s.db.Save(&existingMember).Error; err != nil {
+				return err
+			}
+		}
 		return nil // 已经是成员
 	}
+
+	// 检查用户是否是房间创建者（房主）
+	isHost := room.UserID == userID
 
 	// 添加成员
 	member := &models.PracticeRoomMember{
 		RoomID: roomID,
 		UserID: userID,
-		IsHost: false,
+		IsHost: isHost, // 如果是房间创建者，设置为房主
 	}
 	if err := s.db.Create(member).Error; err != nil {
 		return err
@@ -138,4 +148,13 @@ func (s *PracticeRoomService) LeaveRoom(roomID, userID uuid.UUID) error {
 	}
 
 	return s.db.Save(&room).Error
+}
+
+// GetRoomMemberCount 获取房间成员数
+func (s *PracticeRoomService) GetRoomMemberCount(roomID uuid.UUID) (int, error) {
+	var count int64
+	if err := s.db.Model(&models.PracticeRoomMember{}).Where("room_id = ?", roomID).Count(&count).Error; err != nil {
+		return 0, err
+	}
+	return int(count), nil
 }

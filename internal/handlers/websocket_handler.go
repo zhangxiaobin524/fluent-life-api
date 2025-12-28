@@ -6,6 +6,7 @@ import (
 	"fluent-life-backend/internal/services"
 	"fluent-life-backend/pkg/auth"
 	"fluent-life-backend/pkg/response"
+	"log"
 	"net/http"
 	"time"
 
@@ -144,7 +145,27 @@ func (h *WebSocketHandler) HandleWebSocket(c *gin.Context) {
 		OnLeave: func() {
 			// WebSocket断开时，从数据库删除成员记录（仅当不是全局连接时）
 			if roomIDStr != "global" && roomID != uuid.Nil {
-				h.practiceRoomService.LeaveRoom(roomID, userID)
+				err := h.practiceRoomService.LeaveRoom(roomID, userID)
+				if err != nil {
+					log.Printf("离开房间失败: %v", err)
+				}
+				// 检查房间是否应该关闭（成员数为0）
+				var room models.PracticeRoom
+				if err := h.db.First(&room, "id = ?", roomID).Error; err == nil {
+					// 检查 Hub 中是否还有在线成员
+					hubMemberCount := h.hub.GetRoomMemberCount(roomID.String())
+					// 检查数据库中的成员数
+					var dbMemberCount int64
+					h.db.Model(&models.PracticeRoomMember{}).Where("room_id = ?", roomID).Count(&dbMemberCount)
+					
+					// 如果 Hub 和数据库都没有成员了，关闭房间
+					if hubMemberCount == 0 && dbMemberCount == 0 {
+						room.IsActive = false
+						room.CurrentMembers = 0
+						h.db.Save(&room)
+						log.Printf("房间 %s 已关闭（没有在线成员）", roomID)
+					}
+				}
 			}
 		},
 	}
