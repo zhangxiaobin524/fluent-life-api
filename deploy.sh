@@ -101,18 +101,46 @@ $COMPOSE_CMD ps
 echo -e "${YELLOW}🏥 检查健康状态...${NC}"
 sleep 5
 
+# 检查容器状态
+echo -e "${YELLOW}📦 检查容器状态...${NC}"
+$COMPOSE_CMD ps
+
 # 检查后端健康
+echo -e "${YELLOW}🔍 检查后端服务...${NC}"
 if curl -f http://localhost:8081/health > /dev/null 2>&1; then
     echo -e "${GREEN}✅ 后端服务健康${NC}"
 else
     echo -e "${RED}❌ 后端服务不健康${NC}"
+    echo -e "${YELLOW}查看后端日志:${NC}"
+    $COMPOSE_CMD logs --tail 20 backend
+fi
+
+# 检查后端 API
+echo -e "${YELLOW}🔍 测试后端 API...${NC}"
+if curl -f http://localhost:8081/api/v1/health > /dev/null 2>&1; then
+    echo -e "${GREEN}✅ 后端 API 可访问${NC}"
+else
+    echo -e "${RED}❌ 后端 API 不可访问${NC}"
+    echo -e "${YELLOW}尝试直接访问: curl http://localhost:8081/health${NC}"
 fi
 
 # 检查前端
+echo -e "${YELLOW}🔍 检查前端服务...${NC}"
 if curl -f http://localhost > /dev/null 2>&1; then
     echo -e "${GREEN}✅ 前端服务正常${NC}"
 else
     echo -e "${RED}❌ 前端服务异常${NC}"
+    echo -e "${YELLOW}查看前端日志:${NC}"
+    $COMPOSE_CMD logs --tail 20 frontend
+fi
+
+# 检查网络连接
+echo -e "${YELLOW}🔍 检查容器网络连接...${NC}"
+if docker exec fluent-life-frontend wget -q -O- http://backend:8081/health > /dev/null 2>&1; then
+    echo -e "${GREEN}✅ 前端可以连接到后端${NC}"
+else
+    echo -e "${RED}❌ 前端无法连接到后端${NC}"
+    echo -e "${YELLOW}检查网络配置和容器名称${NC}"
 fi
 
 # 显示日志
