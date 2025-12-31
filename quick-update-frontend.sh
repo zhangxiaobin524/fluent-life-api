@@ -40,3 +40,4 @@ echo ""
 echo "访问: http://$(hostname -I | awk '{print $1}')"
 echo "如果页面没有更新，请清除浏览器缓存"
 
+

@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"os"
 
 	"fluent-life-backend/internal/config"
 	"fluent-life-backend/internal/handlers"
@@ -14,6 +15,19 @@ import (
 )
 
 func main() {
+	// 确保所有日志输出到标准输出和标准错误（都会被重定向到日志文件）
+	// 这样 log.Printf 和 zap logger 都会输出到同一个文件
+	// 使用无缓冲输出，确保日志立即写入
+	log.SetOutput(os.Stdout)
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
+	
+	// 测试日志输出
+	log.Printf("========== 后端服务启动 ==========")
+	os.Stdout.Sync()
+	
+	// 同时设置标准错误输出到标准输出，确保所有日志都在一个文件
+	// 注意：这需要在重定向之前设置，但我们已经用 2>&1 重定向了
+	
 	// 加载配置
 	cfg, err := config.Load()
 	if err != nil {
@@ -124,10 +138,15 @@ func main() {
 			// 对练房
 			practiceRooms := authenticated.Group("/practice-rooms")
 			{
+				log.Printf("[路由注册] 注册对练房路由: POST /api/v1/practice-rooms")
 				practiceRooms.POST("", practiceRoomHandler.CreateRoom)
+				log.Printf("[路由注册] 注册对练房路由: GET /api/v1/practice-rooms")
 				practiceRooms.GET("", practiceRoomHandler.GetRooms)
+				log.Printf("[路由注册] 注册对练房路由: GET /api/v1/practice-rooms/:id")
 				practiceRooms.GET("/:id", practiceRoomHandler.GetRoom)
+				log.Printf("[路由注册] 注册对练房路由: POST /api/v1/practice-rooms/:id/join")
 				practiceRooms.POST("/:id/join", practiceRoomHandler.JoinRoom)
+				log.Printf("[路由注册] 注册对练房路由: POST /api/v1/practice-rooms/:id/leave")
 				practiceRooms.POST("/:id/leave", practiceRoomHandler.LeaveRoom)
 			}
 		}

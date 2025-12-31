@@ -8,6 +8,7 @@ import (
 	"fluent-life-backend/pkg/response"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -132,7 +133,7 @@ func (h *WebSocketHandler) HandleWebSocket(c *gin.Context) {
 	client := &hub.Client{
 		Hub:      h.hub,
 		Conn:     conn,
-		Send:     make(chan hub.Message, 256),
+		Send:     make(chan hub.Message, 512),
 		RoomID:   roomIDStr,
 		UserID:   userID.String(),
 		Username: user.Username,
@@ -145,37 +146,138 @@ func (h *WebSocketHandler) HandleWebSocket(c *gin.Context) {
 		OnLeave: func() {
 			// WebSocket断开时，从数据库删除成员记录（仅当不是全局连接时）
 			if roomIDStr != "global" && roomID != uuid.Nil {
+				// 先检查离开的用户是否是房主
+				var leavingMember models.PracticeRoomMember
+				isHost := false
+				if err := h.db.Where("room_id = ? AND user_id = ?", roomID, userID).First(&leavingMember).Error; err == nil {
+					isHost = leavingMember.IsHost
+				}
+
+				// 获取上麦用户列表（在删除成员之前）
+				onMicUserIDs := h.hub.GetOnMicUsers(roomID.String())
+
+				// 删除成员记录
 				err := h.practiceRoomService.LeaveRoom(roomID, userID)
 				if err != nil {
 					log.Printf("离开房间失败: %v", err)
 				}
-				// 检查房间是否应该关闭（成员数为0）
-				var room models.PracticeRoom
-				if err := h.db.First(&room, "id = ?", roomID).Error; err == nil {
-					// 检查 Hub 中是否还有在线成员
-					hubMemberCount := h.hub.GetRoomMemberCount(roomID.String())
-					// 检查数据库中的成员数
+
+				// 如果离开的是房主，需要处理房主转移或关闭房间
+				if isHost {
+					// 检查是否有其他成员在麦上
+					var onMicMemberID uuid.UUID
+					for _, onMicUserIDStr := range onMicUserIDs {
+						onMicUserID, err := uuid.Parse(onMicUserIDStr)
+						if err == nil && onMicUserID != userID {
+							// 检查这个用户是否还在房间中
+							var member models.PracticeRoomMember
+							if err := h.db.Where("room_id = ? AND user_id = ?", roomID, onMicUserID).First(&member).Error; err == nil {
+								onMicMemberID = onMicUserID
+								break
+							}
+						}
+					}
+
+					if onMicMemberID != uuid.Nil {
+						// 有成员在麦上，转移房主给第一个在麦上的成员
+						if err := h.practiceRoomService.TransferHost(roomID, onMicMemberID); err != nil {
+							log.Printf("转移房主失败: %v", err)
+						} else {
+							log.Printf("房主已转移给用户 %s", onMicMemberID)
+							// 广播房主变更消息
+							h.hub.Broadcast <- hub.Message{
+								Type:      hub.MessageTypeRoomUpdate,
+								RoomID:    roomID.String(),
+								Data:      map[string]interface{}{"new_host_id": onMicMemberID.String()},
+								Timestamp: time.Now().Unix(),
+							}
+						}
+					} else {
+						// 没有人在麦上，检查是否还有其他成员
+						var dbMemberCount int64
+						h.db.Model(&models.PracticeRoomMember{}).Where("room_id = ?", roomID).Count(&dbMemberCount)
+						hubMemberCount := h.hub.GetRoomMemberCount(roomID.String())
+
+						// 如果 Hub 和数据库都没有成员了，关闭房间
+						if hubMemberCount == 0 && dbMemberCount == 0 {
+							var room models.PracticeRoom
+							if err := h.db.First(&room, "id = ?", roomID).Error; err == nil {
+								room.IsActive = false
+								room.CurrentMembers = 0
+								h.db.Save(&room)
+								log.Printf("房间 %s 已关闭（房主离开且没有人在麦上）", roomID)
+
+								// 广播房间关闭消息给所有全局连接
+								h.hub.Broadcast <- hub.Message{
+									Type:      hub.MessageTypeRoomDeleted,
+									RoomID:    roomID.String(),
+									Data:      map[string]interface{}{"room_id": roomID.String()},
+									Timestamp: time.Now().Unix(),
+								}
+							}
+						}
+					}
+				} else {
+					// 普通成员离开，检查房间是否应该关闭
 					var dbMemberCount int64
 					h.db.Model(&models.PracticeRoomMember{}).Where("room_id = ?", roomID).Count(&dbMemberCount)
+					hubMemberCount := h.hub.GetRoomMemberCount(roomID.String())
 
-					// 如果 Hub 和数据库都没有成员了，关闭房间
+					// 如果 Hub 和数据库都没有成员了（或只剩1人且那个人不在线），关闭房间
 					if hubMemberCount == 0 && dbMemberCount == 0 {
-						room.IsActive = false
-						room.CurrentMembers = 0
-						h.db.Save(&room)
-						log.Printf("房间 %s 已关闭（没有在线成员）", roomID)
+						var room models.PracticeRoom
+						if err := h.db.First(&room, "id = ?", roomID).Error; err == nil {
+							room.IsActive = false
+							room.CurrentMembers = 0
+							h.db.Save(&room)
+							log.Printf("房间 %s 已关闭（没有在线成员）", roomID)
+
+							// 广播房间关闭消息
+							h.hub.Broadcast <- hub.Message{
+								Type:      hub.MessageTypeRoomDeleted,
+								RoomID:    roomID.String(),
+								Data:      map[string]interface{}{"room_id": roomID.String()},
+								Timestamp: time.Now().Unix(),
+							}
+						}
+					} else if hubMemberCount == 0 && dbMemberCount == 1 {
+						// 如果数据库还有1个成员，但 Hub 中没有在线成员，说明最后一个人也离线了，关闭房间
+						var room models.PracticeRoom
+						if err := h.db.First(&room, "id = ?", roomID).Error; err == nil {
+							room.IsActive = false
+							room.CurrentMembers = 0
+							h.db.Save(&room)
+							log.Printf("房间 %s 已关闭（最后一名成员离线）", roomID)
+
+							// 广播房间关闭消息
+							h.hub.Broadcast <- hub.Message{
+								Type:      hub.MessageTypeRoomDeleted,
+								RoomID:    roomID.String(),
+								Data:      map[string]interface{}{"room_id": roomID.String()},
+								Timestamp: time.Now().Unix(),
+							}
+						}
 					}
 				}
 			}
 		},
 	}
 
+	// 记录WebSocket连接建立
+	log.Printf("WebSocket连接建立 - UserID: %s, Username: %s, RoomID: %s", userID.String(), user.Username, roomIDStr)
+	os.Stdout.Sync()
+
 	// 注册客户端
+	log.Printf("准备注册客户端到 Hub - UserID: %s, RoomID: %s", userID.String(), roomIDStr)
 	h.hub.Register <- client
+	log.Printf("客户端已发送到 Register 通道 - UserID: %s, RoomID: %s", userID.String(), roomIDStr)
 
 	// 启动读写协程
+	log.Printf("准备启动 WritePump 和 ReadPump - UserID: %s, RoomID: %s", userID.String(), roomIDStr)
 	go client.WritePump()
+	log.Printf("WritePump 已启动 - UserID: %s, RoomID: %s", userID.String(), roomIDStr)
 	go client.ReadPump()
+	log.Printf("ReadPump 已启动 - UserID: %s, RoomID: %s", userID.String(), roomIDStr)
 
 	// 监听房间关闭（仅当不是全局连接时）
 	if roomIDStr != "global" && roomID != uuid.Nil {

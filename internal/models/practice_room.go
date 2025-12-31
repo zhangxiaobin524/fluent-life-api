@@ -48,6 +48,9 @@ func (prm *PracticeRoomMember) BeforeCreate(tx *gorm.DB) error {
 	if prm.ID == uuid.Nil {
 		prm.ID = uuid.New()
 	}
+	if prm.JoinedAt.IsZero() {
+		prm.JoinedAt = time.Now()
+	}
 	return nil
 }
 

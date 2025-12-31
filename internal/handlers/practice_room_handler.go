@@ -31,11 +31,15 @@ func NewPracticeRoomHandler(db *gorm.DB, roomHub *hub.RoomHub) *PracticeRoomHand
 
 // CreateRoom 创建对练房
 func (h *PracticeRoomHandler) CreateRoom(c *gin.Context) {
+	utils.APILog("[CreateRoom] ========== 开始创建对练房 ==========")
+
 	userID, ok := utils.GetUserID(c)
 	if !ok {
+		utils.APILog("[CreateRoom] ❌ 未找到用户信息")
 		response.Unauthorized(c, "未找到用户信息")
 		return
 	}
+	utils.APILog("[CreateRoom] 用户ID: %s", userID.String())
 
 	var req struct {
 		Title string `json:"title" binding:"required"`
@@ -44,30 +48,48 @@ func (h *PracticeRoomHandler) CreateRoom(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.APILog("[CreateRoom] ❌ 请求参数验证失败: %v, 请求体: title=%s, theme=%s, type=%s", err, req.Title, req.Theme, req.Type)
 		response.BadRequest(c, err.Error())
 		return
 	}
+	utils.APILog("[CreateRoom] 请求参数: title=%s, theme=%s, type=%s", req.Title, req.Theme, req.Type)
 
 	room, err := h.practiceRoomService.CreateRoom(userID, req.Title, req.Theme, req.Type)
 	if err != nil {
+		utils.APILog("[CreateRoom] ❌ 创建房间失败: %v", err)
 		response.InternalError(c, "创建房间失败")
 		return
 	}
+	utils.APILog("[CreateRoom] ✅ 房间创建成功，房间ID: %s", room.ID.String())
 
 	// 加载房间的完整信息（包括User信息）用于广播
 	var fullRoom models.PracticeRoom
 	if err := h.db.Preload("User").First(&fullRoom, "id = ?", room.ID).Error; err == nil {
+		utils.APILog("[CreateRoom] ✅ 加载房间完整信息成功，房间标题: %s", fullRoom.Title)
 		// 广播房间创建事件给所有在线用户（通过全局广播）
 		if h.roomHub != nil {
-			h.roomHub.Broadcast <- hub.Message{
+			utils.APILog("[CreateRoom] 准备广播房间创建事件到 roomHub")
+			// 使用非阻塞方式发送，避免阻塞 HTTP 响应
+			select {
+			case h.roomHub.Broadcast <- hub.Message{
 				Type:      hub.MessageTypeRoomCreated,
 				RoomID:    "global", // 全局广播
 				Data:      fullRoom,
 				Timestamp: time.Now().Unix(),
+			}:
+				utils.APILog("[CreateRoom] ✅ 已广播房间创建事件")
+			default:
+				utils.APILog("[CreateRoom] ⚠️ Broadcast channel 已满，跳过广播（不影响房间创建）")
 			}
+		} else {
+			utils.APILog("[CreateRoom] ⚠️ roomHub 为 nil，无法广播")
 		}
+		utils.APILog("[CreateRoom] ========== 创建对练房完成，准备返回响应 ==========")
 		response.Success(c, fullRoom, "创建成功")
+		utils.APILog("[CreateRoom] ✅ 响应已返回给客户端")
 	} else {
+		utils.APILog("[CreateRoom] ⚠️ 加载房间完整信息失败: %v，使用基础房间信息返回", err)
+		utils.APILog("[CreateRoom] ========== 创建对练房完成 ==========")
 		response.Success(c, room, "创建成功")
 	}
 }

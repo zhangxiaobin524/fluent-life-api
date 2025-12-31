@@ -96,3 +96,4 @@ docker exec fluent-life-frontend cat /usr/share/nginx/html/assets/*.js | grep -o
 4. **使用 --no-cache**：确保使用新的环境变量，建议使用 `--no-cache` 重新构建
 
 
+
