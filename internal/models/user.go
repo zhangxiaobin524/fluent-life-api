@@ -40,6 +40,7 @@ type UserAchievement struct {
 type UserProfile struct {
 	User
 	TotalTrainingDays   int             `json:"total_training_days"`
+	TotalTrainingSessions int             `json:"total_training_sessions"`
 	TotalTrainingMinutes int             `json:"total_training_minutes"`
 	BraveryBadges       []UserAchievement `json:"bravery_badges"` // 假设 Achievement 是勋章模型
 	WeeklyActivity      []int           `json:"weekly_activity"`  // 例如，一周内每天的活跃度

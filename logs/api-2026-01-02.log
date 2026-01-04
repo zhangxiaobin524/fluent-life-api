@@ -1,0 +1,200 @@
+2026/01/02 06:36:01 [Auth Middleware] 收到请求: POST /api/v1/practice-rooms/e696fa9b-55e6-4759-a63a-b3acbc6b6b32/leave
+2026/01/02 06:36:01 [Auth Middleware] ✅ 认证成功，用户ID: 6f0cafb9-6cd4-44e0-b52b-105afd0f0faa
+2026/01/02 06:36:01 [Auth Middleware] 收到请求: GET /api/v1/practice-rooms/e696fa9b-55e6-4759-a63a-b3acbc6b6b32
+2026/01/02 06:36:01 [Auth Middleware] ✅ 认证成功，用户ID: 1b7b6081-9139-4e57-b16e-7f0885ae5e43
+2026/01/02 06:36:07 [Auth Middleware] 收到请求: POST /api/v1/practice-rooms/e696fa9b-55e6-4759-a63a-b3acbc6b6b32/leave
+2026/01/02 06:36:07 [Auth Middleware] ✅ 认证成功，用户ID: 1b7b6081-9139-4e57-b16e-7f0885ae5e43
+2026/01/02 06:36:11 [Auth Middleware] 收到请求: POST /api/v1/practice-rooms
+2026/01/02 06:36:11 [Auth Middleware] ✅ 认证成功，用户ID: 1b7b6081-9139-4e57-b16e-7f0885ae5e43
+2026/01/02 06:36:11 [CreateRoom] ========== 开始创建对练房 ==========
+2026/01/02 06:36:11 [CreateRoom] 用户ID: 1b7b6081-9139-4e57-b16e-7f0885ae5e43
+2026/01/02 06:36:11 [CreateRoom] 请求参数: title=444, theme=日常对话, type=公开房间
+2026/01/02 06:36:11 [PracticeRoomService.CreateRoom] 开始创建房间，用户ID: 1b7b6081-9139-4e57-b16e-7f0885ae5e43, 标题: 444, 主题: 日常对话, 类型: 公开房间
+2026/01/02 06:36:11 [PracticeRoomService.CreateRoom] 准备创建房间记录到数据库
+2026/01/02 06:36:11 [PracticeRoomService.CreateRoom] ✅ 房间记录创建成功，房间ID: cfa0d1ee-082c-4f30-aa05-e38b4349e418
+2026/01/02 06:36:11 [PracticeRoomService.CreateRoom] 准备创建房主成员记录，房间ID: cfa0d1ee-082c-4f30-aa05-e38b4349e418, 用户ID: 1b7b6081-9139-4e57-b16e-7f0885ae5e43
+2026/01/02 06:36:11 [PracticeRoomService.CreateRoom] ✅ 房主成员记录创建成功
+2026/01/02 06:36:11 [CreateRoom] ✅ 房间创建成功，房间ID: cfa0d1ee-082c-4f30-aa05-e38b4349e418
+2026/01/02 06:36:11 [CreateRoom] ✅ 加载房间完整信息成功，房间标题: 444
+2026/01/02 06:36:11 [CreateRoom] 准备广播房间创建事件到 roomHub
+2026/01/02 06:36:11 [CreateRoom] ✅ 已广播房间创建事件
+2026/01/02 06:36:11 [CreateRoom] ========== 创建对练房完成，准备返回响应 ==========
+2026/01/02 06:36:11 [CreateRoom] ✅ 响应已返回给客户端
+2026/01/02 06:36:11 [Auth Middleware] 收到请求: GET /api/v1/practice-rooms
+2026/01/02 06:36:11 [Auth Middleware] ✅ 认证成功，用户ID: 1b7b6081-9139-4e57-b16e-7f0885ae5e43
+2026/01/02 06:36:12 [Auth Middleware] 收到请求: GET /api/v1/users/profile
+2026/01/02 06:36:12 [Auth Middleware] ✅ 认证成功，用户ID: 1b7b6081-9139-4e57-b16e-7f0885ae5e43
+2026/01/02 06:36:12 [Auth Middleware] 收到请求: GET /api/v1/users/profile
+2026/01/02 06:36:12 [Auth Middleware] ✅ 认证成功，用户ID: 1b7b6081-9139-4e57-b16e-7f0885ae5e43
+2026/01/02 06:36:12 [Auth Middleware] 收到请求: GET /api/v1/practice-rooms/cfa0d1ee-082c-4f30-aa05-e38b4349e418
+2026/01/02 06:36:12 [Auth Middleware] ✅ 认证成功，用户ID: 1b7b6081-9139-4e57-b16e-7f0885ae5e43
+2026/01/02 06:36:19 [Auth Middleware] 收到请求: GET /api/v1/practice-rooms
+2026/01/02 06:36:19 [Auth Middleware] ✅ 认证成功，用户ID: 6f0cafb9-6cd4-44e0-b52b-105afd0f0faa
+2026/01/02 06:36:20 [Auth Middleware] 收到请求: POST /api/v1/practice-rooms/cfa0d1ee-082c-4f30-aa05-e38b4349e418/join
+2026/01/02 06:36:20 [Auth Middleware] ✅ 认证成功，用户ID: 6f0cafb9-6cd4-44e0-b52b-105afd0f0faa
+2026/01/02 06:36:20 [Auth Middleware] 收到请求: GET /api/v1/users/profile
+2026/01/02 06:36:20 [Auth Middleware] ✅ 认证成功，用户ID: 6f0cafb9-6cd4-44e0-b52b-105afd0f0faa
+2026/01/02 06:36:20 [Auth Middleware] 收到请求: GET /api/v1/users/profile
+2026/01/02 06:36:20 [Auth Middleware] ✅ 认证成功，用户ID: 6f0cafb9-6cd4-44e0-b52b-105afd0f0faa
+2026/01/02 06:36:20 [Auth Middleware] 收到请求: GET /api/v1/practice-rooms/cfa0d1ee-082c-4f30-aa05-e38b4349e418
+2026/01/02 06:36:20 [Auth Middleware] ✅ 认证成功，用户ID: 6f0cafb9-6cd4-44e0-b52b-105afd0f0faa
+2026/01/02 06:36:20 [Auth Middleware] 收到请求: GET /api/v1/practice-rooms/cfa0d1ee-082c-4f30-aa05-e38b4349e418
+2026/01/02 06:36:20 [Auth Middleware] ✅ 认证成功，用户ID: 1b7b6081-9139-4e57-b16e-7f0885ae5e43
+2026/01/02 06:36:25 [Auth Middleware] 收到请求: GET /api/v1/practice-rooms/cfa0d1ee-082c-4f30-aa05-e38b4349e418
+2026/01/02 06:36:25 [Auth Middleware] ✅ 认证成功，用户ID: 6f0cafb9-6cd4-44e0-b52b-105afd0f0faa
+2026/01/02 06:43:53 [Auth Middleware] 收到请求: POST /api/v1/practice-rooms/cfa0d1ee-082c-4f30-aa05-e38b4349e418/leave
+2026/01/02 06:43:53 [Auth Middleware] ✅ 认证成功，用户ID: 6f0cafb9-6cd4-44e0-b52b-105afd0f0faa
+2026/01/02 06:43:53 [Auth Middleware] 收到请求: GET /api/v1/practice-rooms/cfa0d1ee-082c-4f30-aa05-e38b4349e418
+2026/01/02 06:43:53 [Auth Middleware] ✅ 认证成功，用户ID: 1b7b6081-9139-4e57-b16e-7f0885ae5e43
+2026/01/02 06:43:53 [Auth Middleware] 收到请求: POST /api/v1/practice-rooms/cfa0d1ee-082c-4f30-aa05-e38b4349e418/leave
+2026/01/02 06:43:53 [Auth Middleware] ✅ 认证成功，用户ID: 1b7b6081-9139-4e57-b16e-7f0885ae5e43
+2026/01/02 06:44:00 [Auth Middleware] 收到请求: GET /api/v1/training/stats
+2026/01/02 06:44:00 [Auth Middleware] ❌ 无效的认证令牌: token has invalid claims: token is expired
+2026/01/02 06:44:00 [Auth Middleware] 收到请求: GET /api/v1/training/records
+2026/01/02 06:44:00 [Auth Middleware] ❌ 无效的认证令牌: token has invalid claims: token is expired
+2026/01/02 06:44:00 [Auth Middleware] 收到请求: GET /api/v1/training/records
+2026/01/02 06:44:00 [Auth Middleware] ❌ 无效的认证令牌: token has invalid claims: token is expired
+2026/01/02 06:44:00 [Auth Middleware] 收到请求: GET /api/v1/training/stats
+2026/01/02 06:44:00 [Auth Middleware] ❌ 无效的认证令牌: token has invalid claims: token is expired
+2026/01/02 06:44:00 [Auth Middleware] 收到请求: GET /api/v1/training/records
+2026/01/02 06:44:00 [Auth Middleware] ❌ 无效的认证令牌: token has invalid claims: token is expired
+2026/01/02 06:44:00 [Auth Middleware] 收到请求: GET /api/v1/training/stats
+2026/01/02 06:44:00 [Auth Middleware] ❌ 无效的认证令牌: token has invalid claims: token is expired
+2026/01/02 06:44:00 [Auth Middleware] 收到请求: GET /api/v1/training/stats
+2026/01/02 06:44:00 [Auth Middleware] 收到请求: GET /api/v1/training/records
+2026/01/02 06:44:00 [Auth Middleware] ❌ 无效的认证令牌: token has invalid claims: token is expired
+2026/01/02 06:44:00 [Auth Middleware] ❌ 无效的认证令牌: token has invalid claims: token is expired
+2026/01/02 06:44:01 [Auth Middleware] 收到请求: GET /api/v1/practice-rooms
+2026/01/02 06:44:01 [Auth Middleware] ❌ 无效的认证令牌: token has invalid claims: token is expired
+2026/01/02 06:44:01 [Auth Middleware] 收到请求: GET /api/v1/practice-rooms
+2026/01/02 06:44:01 [Auth Middleware] ❌ 无效的认证令牌: token has invalid claims: token is expired
+2026/01/02 06:44:03 [Auth Middleware] 收到请求: GET /api/v1/practice-rooms
+2026/01/02 06:44:03 [Auth Middleware] ❌ 无效的认证令牌: token has invalid claims: token is expired
+2026/01/02 06:44:04 [Auth Middleware] 收到请求: GET /api/v1/training/records
+2026/01/02 06:44:04 [Auth Middleware] ❌ 无效的认证令牌: token has invalid claims: token is expired
+2026/01/02 06:44:04 [Auth Middleware] 收到请求: GET /api/v1/achievements
+2026/01/02 06:44:04 [Auth Middleware] ❌ 无效的认证令牌: token has invalid claims: token is expired
+2026/01/02 06:44:04 [Auth Middleware] 收到请求: GET /api/v1/users/profile
+2026/01/02 06:44:04 [Auth Middleware] ❌ 无效的认证令牌: token has invalid claims: token is expired
+2026/01/02 06:44:04 [Auth Middleware] 收到请求: GET /api/v1/training/records
+2026/01/02 06:44:04 [Auth Middleware] ❌ 无效的认证令牌: token has invalid claims: token is expired
+2026/01/02 06:44:04 [Auth Middleware] 收到请求: GET /api/v1/users/profile
+2026/01/02 06:44:04 [Auth Middleware] 收到请求: GET /api/v1/achievements
+2026/01/02 06:44:04 [Auth Middleware] ❌ 无效的认证令牌: token has invalid claims: token is expired
+2026/01/02 06:44:04 [Auth Middleware] ❌ 无效的认证令牌: token has invalid claims: token is expired
+2026/01/02 06:44:06 [Auth Middleware] 收到请求: GET /api/v1/training/stats
+2026/01/02 06:44:06 [Auth Middleware] ❌ 未提供认证令牌
+2026/01/02 06:44:06 [Auth Middleware] 收到请求: GET /api/v1/training/records
+2026/01/02 06:44:06 [Auth Middleware] ❌ 未提供认证令牌
+2026/01/02 06:44:06 [Auth Middleware] 收到请求: GET /api/v1/training/records
+2026/01/02 06:44:06 [Auth Middleware] ❌ 未提供认证令牌
+2026/01/02 06:44:06 [Auth Middleware] 收到请求: GET /api/v1/training/stats
+2026/01/02 06:44:06 [Auth Middleware] ❌ 未提供认证令牌
+2026/01/02 06:44:06 [Auth Middleware] 收到请求: GET /api/v1/training/stats
+2026/01/02 06:44:06 [Auth Middleware] ❌ 未提供认证令牌
+2026/01/02 06:44:06 [Auth Middleware] 收到请求: GET /api/v1/training/records
+2026/01/02 06:44:06 [Auth Middleware] ❌ 未提供认证令牌
+2026/01/02 06:44:06 [Auth Middleware] 收到请求: GET /api/v1/training/records
+2026/01/02 06:44:06 [Auth Middleware] ❌ 未提供认证令牌
+2026/01/02 06:44:06 [Auth Middleware] 收到请求: GET /api/v1/training/stats
+2026/01/02 06:44:06 [Auth Middleware] ❌ 未提供认证令牌
+2026/01/02 06:44:10 [Auth Middleware] 收到请求: GET /api/v1/training/stats
+2026/01/02 06:44:10 [Auth Middleware] 收到请求: GET /api/v1/training/records
+2026/01/02 06:44:10 [Auth Middleware] ❌ 未提供认证令牌
+2026/01/02 06:44:10 [Auth Middleware] ❌ 未提供认证令牌
+2026/01/02 06:44:12 [Auth Middleware] 收到请求: GET /api/v1/users/profile
+2026/01/02 06:44:12 [Auth Middleware] ✅ 认证成功，用户ID: 1b7b6081-9139-4e57-b16e-7f0885ae5e43
+2026/01/02 06:44:12 [Auth Middleware] 收到请求: GET /api/v1/training/records
+2026/01/02 06:44:12 [Auth Middleware] ✅ 认证成功，用户ID: 1b7b6081-9139-4e57-b16e-7f0885ae5e43
+2026/01/02 06:44:12 [Auth Middleware] 收到请求: GET /api/v1/achievements
+2026/01/02 06:44:12 [Auth Middleware] ✅ 认证成功，用户ID: 1b7b6081-9139-4e57-b16e-7f0885ae5e43
+2026/01/02 06:44:12 [Auth Middleware] 收到请求: GET /api/v1/users/profile
+2026/01/02 06:44:12 [Auth Middleware] ✅ 认证成功，用户ID: 1b7b6081-9139-4e57-b16e-7f0885ae5e43
+2026/01/02 06:44:12 [Auth Middleware] 收到请求: GET /api/v1/achievements
+2026/01/02 06:44:12 [Auth Middleware] ✅ 认证成功，用户ID: 1b7b6081-9139-4e57-b16e-7f0885ae5e43
+2026/01/02 06:44:12 [Auth Middleware] 收到请求: GET /api/v1/training/records
+2026/01/02 06:44:12 [Auth Middleware] ✅ 认证成功，用户ID: 1b7b6081-9139-4e57-b16e-7f0885ae5e43
+2026/01/02 06:44:14 [Auth Middleware] 收到请求: GET /api/v1/practice-rooms
+2026/01/02 06:44:14 [Auth Middleware] ✅ 认证成功，用户ID: 1b7b6081-9139-4e57-b16e-7f0885ae5e43
+2026/01/02 06:44:14 [Auth Middleware] 收到请求: GET /api/v1/practice-rooms
+2026/01/02 06:44:14 [Auth Middleware] ✅ 认证成功，用户ID: 1b7b6081-9139-4e57-b16e-7f0885ae5e43
+2026/01/02 06:44:15 [Auth Middleware] 收到请求: POST /api/v1/practice-rooms/4f52b5ec-23f0-4cc3-a1ca-8cc04704b716/join
+2026/01/02 06:44:15 [Auth Middleware] ✅ 认证成功，用户ID: 1b7b6081-9139-4e57-b16e-7f0885ae5e43
+2026/01/02 06:44:15 [Auth Middleware] 收到请求: GET /api/v1/users/profile
+2026/01/02 06:44:15 [Auth Middleware] ✅ 认证成功，用户ID: 1b7b6081-9139-4e57-b16e-7f0885ae5e43
+2026/01/02 06:44:15 [Auth Middleware] 收到请求: GET /api/v1/users/profile
+2026/01/02 06:44:15 [Auth Middleware] ✅ 认证成功，用户ID: 1b7b6081-9139-4e57-b16e-7f0885ae5e43
+2026/01/02 06:44:15 [Auth Middleware] 收到请求: GET /api/v1/practice-rooms/4f52b5ec-23f0-4cc3-a1ca-8cc04704b716
+2026/01/02 06:44:15 [Auth Middleware] ✅ 认证成功，用户ID: 1b7b6081-9139-4e57-b16e-7f0885ae5e43
+2026/01/02 06:44:23 [Auth Middleware] 收到请求: GET /api/v1/training/stats
+2026/01/02 06:44:23 [Auth Middleware] 收到请求: GET /api/v1/training/records
+2026/01/02 06:44:23 [Auth Middleware] ✅ 认证成功，用户ID: 6f0cafb9-6cd4-44e0-b52b-105afd0f0faa
+2026/01/02 06:44:23 [Auth Middleware] ✅ 认证成功，用户ID: 6f0cafb9-6cd4-44e0-b52b-105afd0f0faa
+2026/01/02 06:44:23 [Auth Middleware] 收到请求: GET /api/v1/training/records
+2026/01/02 06:44:23 [Auth Middleware] ✅ 认证成功，用户ID: 6f0cafb9-6cd4-44e0-b52b-105afd0f0faa
+2026/01/02 06:44:23 [Auth Middleware] 收到请求: GET /api/v1/training/records
+2026/01/02 06:44:23 [Auth Middleware] ✅ 认证成功，用户ID: 6f0cafb9-6cd4-44e0-b52b-105afd0f0faa
+2026/01/02 06:44:23 [Auth Middleware] 收到请求: GET /api/v1/training/stats
+2026/01/02 06:44:23 [Auth Middleware] ✅ 认证成功，用户ID: 6f0cafb9-6cd4-44e0-b52b-105afd0f0faa
+2026/01/02 06:44:23 [Auth Middleware] 收到请求: GET /api/v1/training/stats
+2026/01/02 06:44:23 [Auth Middleware] ✅ 认证成功，用户ID: 6f0cafb9-6cd4-44e0-b52b-105afd0f0faa
+2026/01/02 06:44:23 [Auth Middleware] 收到请求: GET /api/v1/training/records
+2026/01/02 06:44:23 [Auth Middleware] ✅ 认证成功，用户ID: 6f0cafb9-6cd4-44e0-b52b-105afd0f0faa
+2026/01/02 06:44:23 [Auth Middleware] 收到请求: GET /api/v1/training/stats
+2026/01/02 06:44:23 [Auth Middleware] ✅ 认证成功，用户ID: 6f0cafb9-6cd4-44e0-b52b-105afd0f0faa
+2026/01/02 06:44:23 [Auth Middleware] 收到请求: GET /api/v1/training/records
+2026/01/02 06:44:23 [Auth Middleware] ✅ 认证成功，用户ID: 6f0cafb9-6cd4-44e0-b52b-105afd0f0faa
+2026/01/02 06:44:23 [Auth Middleware] 收到请求: GET /api/v1/training/records
+2026/01/02 06:44:23 [Auth Middleware] ✅ 认证成功，用户ID: 6f0cafb9-6cd4-44e0-b52b-105afd0f0faa
+2026/01/02 06:44:23 [Auth Middleware] 收到请求: GET /api/v1/training/records
+2026/01/02 06:44:23 [Auth Middleware] ✅ 认证成功，用户ID: 6f0cafb9-6cd4-44e0-b52b-105afd0f0faa
+2026/01/02 06:44:23 [Auth Middleware] 收到请求: GET /api/v1/training/records
+2026/01/02 06:44:23 [Auth Middleware] ✅ 认证成功，用户ID: 6f0cafb9-6cd4-44e0-b52b-105afd0f0faa
+2026/01/02 06:44:25 [Auth Middleware] 收到请求: GET /api/v1/users/profile
+2026/01/02 06:44:25 [Auth Middleware] ✅ 认证成功，用户ID: 6f0cafb9-6cd4-44e0-b52b-105afd0f0faa
+2026/01/02 06:44:25 [Auth Middleware] 收到请求: GET /api/v1/training/records
+2026/01/02 06:44:25 [Auth Middleware] ✅ 认证成功，用户ID: 6f0cafb9-6cd4-44e0-b52b-105afd0f0faa
+2026/01/02 06:44:25 [Auth Middleware] 收到请求: GET /api/v1/achievements
+2026/01/02 06:44:25 [Auth Middleware] ✅ 认证成功，用户ID: 6f0cafb9-6cd4-44e0-b52b-105afd0f0faa
+2026/01/02 06:44:25 [Auth Middleware] 收到请求: GET /api/v1/users/profile
+2026/01/02 06:44:25 [Auth Middleware] ✅ 认证成功，用户ID: 6f0cafb9-6cd4-44e0-b52b-105afd0f0faa
+2026/01/02 06:44:25 [Auth Middleware] 收到请求: GET /api/v1/training/records
+2026/01/02 06:44:25 [Auth Middleware] ✅ 认证成功，用户ID: 6f0cafb9-6cd4-44e0-b52b-105afd0f0faa
+2026/01/02 06:44:25 [Auth Middleware] 收到请求: GET /api/v1/achievements
+2026/01/02 06:44:25 [Auth Middleware] ✅ 认证成功，用户ID: 6f0cafb9-6cd4-44e0-b52b-105afd0f0faa
+2026/01/02 06:44:30 [Auth Middleware] 收到请求: GET /api/v1/practice-rooms
+2026/01/02 06:44:30 [Auth Middleware] ✅ 认证成功，用户ID: 6f0cafb9-6cd4-44e0-b52b-105afd0f0faa
+2026/01/02 06:44:30 [Auth Middleware] 收到请求: GET /api/v1/practice-rooms
+2026/01/02 06:44:30 [Auth Middleware] ✅ 认证成功，用户ID: 6f0cafb9-6cd4-44e0-b52b-105afd0f0faa
+2026/01/02 06:44:33 [Auth Middleware] 收到请求: POST /api/v1/practice-rooms/4f52b5ec-23f0-4cc3-a1ca-8cc04704b716/join
+2026/01/02 06:44:33 [Auth Middleware] ✅ 认证成功，用户ID: 6f0cafb9-6cd4-44e0-b52b-105afd0f0faa
+2026/01/02 06:44:33 [Auth Middleware] 收到请求: GET /api/v1/users/profile
+2026/01/02 06:44:33 [Auth Middleware] ✅ 认证成功，用户ID: 6f0cafb9-6cd4-44e0-b52b-105afd0f0faa
+2026/01/02 06:44:33 [Auth Middleware] 收到请求: GET /api/v1/users/profile
+2026/01/02 06:44:33 [Auth Middleware] ✅ 认证成功，用户ID: 6f0cafb9-6cd4-44e0-b52b-105afd0f0faa
+2026/01/02 06:44:33 [Auth Middleware] 收到请求: GET /api/v1/practice-rooms/4f52b5ec-23f0-4cc3-a1ca-8cc04704b716
+2026/01/02 06:44:33 [Auth Middleware] ✅ 认证成功，用户ID: 6f0cafb9-6cd4-44e0-b52b-105afd0f0faa
+2026/01/02 06:44:33 [Auth Middleware] 收到请求: GET /api/v1/practice-rooms/4f52b5ec-23f0-4cc3-a1ca-8cc04704b716
+2026/01/02 06:44:33 [Auth Middleware] ✅ 认证成功，用户ID: 1b7b6081-9139-4e57-b16e-7f0885ae5e43
+2026/01/02 06:44:38 [Auth Middleware] 收到请求: POST /api/v1/practice-rooms/4f52b5ec-23f0-4cc3-a1ca-8cc04704b716/leave
+2026/01/02 06:44:38 [Auth Middleware] ✅ 认证成功，用户ID: 1b7b6081-9139-4e57-b16e-7f0885ae5e43
+2026/01/02 06:44:38 [Auth Middleware] 收到请求: GET /api/v1/practice-rooms/4f52b5ec-23f0-4cc3-a1ca-8cc04704b716
+2026/01/02 06:44:38 [Auth Middleware] ✅ 认证成功，用户ID: 6f0cafb9-6cd4-44e0-b52b-105afd0f0faa
+2026/01/02 06:44:41 [Auth Middleware] 收到请求: POST /api/v1/practice-rooms/4f52b5ec-23f0-4cc3-a1ca-8cc04704b716/join
+2026/01/02 06:44:41 [Auth Middleware] ✅ 认证成功，用户ID: 1b7b6081-9139-4e57-b16e-7f0885ae5e43
+2026/01/02 06:44:41 [Auth Middleware] 收到请求: GET /api/v1/users/profile
+2026/01/02 06:44:41 [Auth Middleware] ✅ 认证成功，用户ID: 1b7b6081-9139-4e57-b16e-7f0885ae5e43
+2026/01/02 06:44:41 [Auth Middleware] 收到请求: GET /api/v1/users/profile
+2026/01/02 06:44:41 [Auth Middleware] ✅ 认证成功，用户ID: 1b7b6081-9139-4e57-b16e-7f0885ae5e43
+2026/01/02 06:44:41 [Auth Middleware] 收到请求: GET /api/v1/practice-rooms/4f52b5ec-23f0-4cc3-a1ca-8cc04704b716
+2026/01/02 06:44:41 [Auth Middleware] ✅ 认证成功，用户ID: 1b7b6081-9139-4e57-b16e-7f0885ae5e43
+2026/01/02 06:44:41 [Auth Middleware] 收到请求: GET /api/v1/practice-rooms/4f52b5ec-23f0-4cc3-a1ca-8cc04704b716
+2026/01/02 06:44:41 [Auth Middleware] ✅ 认证成功，用户ID: 6f0cafb9-6cd4-44e0-b52b-105afd0f0faa
+2026/01/02 06:44:49 [Auth Middleware] 收到请求: GET /api/v1/practice-rooms/4f52b5ec-23f0-4cc3-a1ca-8cc04704b716
+2026/01/02 06:44:49 [Auth Middleware] ✅ 认证成功，用户ID: 6f0cafb9-6cd4-44e0-b52b-105afd0f0faa
+2026/01/02 06:45:15 [Auth Middleware] 收到请求: POST /api/v1/practice-rooms/4f52b5ec-23f0-4cc3-a1ca-8cc04704b716/leave
+2026/01/02 06:45:15 [Auth Middleware] ✅ 认证成功，用户ID: 1b7b6081-9139-4e57-b16e-7f0885ae5e43
+2026/01/02 06:45:15 [Auth Middleware] 收到请求: GET /api/v1/practice-rooms/4f52b5ec-23f0-4cc3-a1ca-8cc04704b716
+2026/01/02 06:45:15 [Auth Middleware] ✅ 认证成功，用户ID: 6f0cafb9-6cd4-44e0-b52b-105afd0f0faa
+2026/01/02 06:45:15 [Auth Middleware] 收到请求: POST /api/v1/practice-rooms/4f52b5ec-23f0-4cc3-a1ca-8cc04704b716/leave
+2026/01/02 06:45:15 [Auth Middleware] ✅ 认证成功，用户ID: 6f0cafb9-6cd4-44e0-b52b-105afd0f0faa

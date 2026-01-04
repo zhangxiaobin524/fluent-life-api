@@ -208,6 +208,15 @@ func (s *TrainingService) GetTotalTrainingCounts(userID uuid.UUID) (int, error) 
 	return totalCounts, err
 }
 
+// GetTotalTrainingSessions 获取用户总锻炼会话次数
+func (s *TrainingService) GetTotalTrainingSessions(userID uuid.UUID) (int, error) {
+	var totalSessions int
+	err := s.db.Model(&models.TrainingRecord{}).
+		Where("user_id = ?", userID).
+		Count(&totalSessions).Error
+	return totalSessions, err
+}
+
 // GetTotalTrainingMinutes 获取用户总锻炼分钟数
 func (s *TrainingService) GetTotalTrainingMinutes(userID uuid.UUID) (int, error) {
 	var totalDurationSeconds int

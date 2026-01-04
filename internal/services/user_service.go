@@ -119,6 +119,11 @@ func (s *UserService) GetUserProfileWithStats(userID uuid.UUID) (*models.UserPro
 		return nil, err
 	}
 
+	totalTrainingSessions, err := s.trainingService.GetTotalTrainingSessions(userID)
+	if err != nil {
+		return nil, err
+	}
+
 	totalTrainingMinutes, err := s.trainingService.GetTotalTrainingMinutes(userID)
 	if err != nil {
 		return nil, err
@@ -137,6 +142,7 @@ func (s *UserService) GetUserProfileWithStats(userID uuid.UUID) (*models.UserPro
 	userProfile := &models.UserProfile{
 		User:                user,
 		TotalTrainingDays:   totalTrainingDays,
+		TotalTrainingSessions: totalTrainingSessions,
 		TotalTrainingMinutes: totalTrainingMinutes,
 		BraveryBadges:       braveryBadges,
 		WeeklyActivity:      weeklyActivity,
