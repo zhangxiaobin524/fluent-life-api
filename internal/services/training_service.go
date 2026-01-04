@@ -188,6 +188,36 @@ func (s *TrainingService) GetStats(userID uuid.UUID) (map[string]interface{}, er
 	}, nil
 }
 
+// GetTotalTrainingDays 获取用户总锻炼天数
+func (s *TrainingService) GetTotalTrainingDays(userID uuid.UUID) (int, error) {
+	var totalDays int
+	err := s.db.Model(&models.TrainingRecord{}).
+		Where("user_id = ?", userID).
+		Select("COUNT(DISTINCT DATE(timestamp))").
+		Scan(&totalDays).Error
+	return totalDays, err
+}
+
+// GetTotalTrainingCounts 获取用户总锻炼次数
+func (s *TrainingService) GetTotalTrainingCounts(userID uuid.UUID) (int, error) {
+	var totalCounts int
+	err := s.db.Model(&models.TrainingRecord{}).
+		Where("user_id = ?", userID).
+		Select("COUNT(*)").
+		Scan(&totalCounts).Error
+	return totalCounts, err
+}
+
+// GetTotalTrainingMinutes 获取用户总锻炼分钟数
+func (s *TrainingService) GetTotalTrainingMinutes(userID uuid.UUID) (int, error) {
+	var totalDurationSeconds int
+	err := s.db.Model(&models.TrainingRecord{}).
+		Where("user_id = ?", userID).
+		Select("COALESCE(SUM(duration), 0)").
+		Scan(&totalDurationSeconds).Error
+	return totalDurationSeconds / 60, err
+}
+
 func (s *TrainingService) GetMeditationProgress(userID uuid.UUID) ([]models.MeditationProgress, error) {
 	var progress []models.MeditationProgress
 	if err := s.db.Where("user_id = ?", userID).Order("stage ASC").Find(&progress).Error; err != nil {

@@ -111,3 +111,47 @@ func (s *CommunityService) GetComments(postID uuid.UUID) ([]models.Comment, erro
 	return comments, nil
 }
 
+func (s *CommunityService) DeletePost(userID, postID uuid.UUID) error {
+	var post models.Post
+	if err := s.db.First(&post, postID).Error; err != nil {
+		return err // gorm.ErrRecordNotFound if not found
+	}
+
+	if post.UserID != userID {
+		return gorm.ErrRecordNotFound // Or a custom error for unauthorized
+	}
+
+	// Delete associated comments
+	if err := s.db.Where("post_id = ?", postID).Delete(&models.Comment{}).Error; err != nil {
+		return err
+	}
+
+	// Delete associated likes
+	if err := s.db.Where("post_id = ?", postID).Delete(&models.PostLike{}).Error; err != nil {
+		return err
+	}
+
+	// Delete the post
+	if err := s.db.Delete(&post).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *CommunityService) GetUserPosts(targetUserID uuid.UUID, page, pageSize int, currentUserID *uuid.UUID) ([]models.Post, int64, error) {
+	var posts []models.Post
+	var total int64
+
+	query := s.db.Model(&models.Post{}).Where("user_id = ?", targetUserID)
+	query.Count(&total)
+
+	offset := (page - 1) * pageSize
+	if err := query.Preload("User").Preload("Likes").Order("created_at DESC").Offset(offset).Limit(pageSize).Find(&posts).Error; err != nil {
+		return nil, 0, err
+	}
+
+	return posts, total, nil
+}
+
+

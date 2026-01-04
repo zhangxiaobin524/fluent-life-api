@@ -99,6 +99,7 @@ func main() {
 				users.GET("/profile", userHandler.GetProfile)
 				users.PUT("/profile", userHandler.UpdateProfile)
 				users.GET("/stats", userHandler.GetStats)
+				users.GET("/:id", userHandler.GetUserProfileByID)
 			}
 
 			// 训练记录
@@ -127,6 +128,8 @@ func main() {
 				community.POST("/posts/:id/like", communityHandler.ToggleLike)
 				community.GET("/posts/:id/comments", communityHandler.GetComments)
 				community.POST("/posts/:id/comments", communityHandler.CreateComment)
+				community.DELETE("/posts/:id", communityHandler.DeletePost)
+				community.GET("/users/:id/posts", communityHandler.GetUserPosts)
 			}
 
 			// 成就系统

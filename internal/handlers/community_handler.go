@@ -108,6 +108,62 @@ func (h *CommunityHandler) GetPosts(c *gin.Context) {
 	}, "获取成功")
 }
 
+func (h *CommunityHandler) GetUserPosts(c *gin.Context) {
+	userIDStr := c.Param("id")
+	targetUserID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		response.BadRequest(c, "无效的用户ID")
+		return
+	}
+
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
+
+	if page < 1 {
+		page = 1
+	}
+	if pageSize < 1 || pageSize > 100 {
+		pageSize = 20
+	}
+
+	var currentUserID *uuid.UUID
+	if uid, ok := utils.GetUserID(c); ok {
+		currentUserID = &uid
+	}
+
+	posts, total, err := h.communityService.GetUserPosts(targetUserID, page, pageSize, currentUserID)
+	if err != nil {
+		response.InternalError(c, "获取失败")
+		return
+	}
+
+	type PostWithLiked struct {
+		models.Post
+		Liked bool `json:"liked"`
+	}
+	
+	postsWithLiked := make([]PostWithLiked, len(posts))
+	for i, post := range posts {
+		postsWithLiked[i] = PostWithLiked{Post: post, Liked: false}
+		if currentUserID != nil {
+			for _, like := range post.Likes {
+				if like.UserID == *currentUserID {
+					postsWithLiked[i].Liked = true
+					break
+				}
+			}
+		}
+	}
+
+	response.Success(c, gin.H{
+		"posts":     postsWithLiked,
+		"total":     total,
+		"page":      page,
+		"page_size": pageSize,
+	}, "获取成功")
+}
+
+
 func (h *CommunityHandler) GetPost(c *gin.Context) {
 	postID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -188,5 +244,31 @@ func (h *CommunityHandler) CreateComment(c *gin.Context) {
 	}
 
 	response.Success(c, comment, "评论成功")
+}
+
+func (h *CommunityHandler) DeletePost(c *gin.Context) {
+	userID, ok := utils.GetUserID(c)
+	if !ok {
+		response.Unauthorized(c, "未找到用户信息")
+		return
+	}
+
+	postID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		response.BadRequest(c, "无效的帖子ID")
+		return
+	}
+
+	err = h.communityService.DeletePost(userID, postID)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			response.NotFound(c, "帖子不存在或无权删除")
+			return
+		}
+		response.InternalError(c, "删除失败")
+		return
+	}
+
+	response.Success(c, nil, "删除成功")
 }
 

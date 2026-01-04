@@ -26,6 +26,15 @@ func (u *User) BeforeCreate(tx *gorm.DB) error {
 	return nil
 }
 
+// UserProfile 包含用户基本信息和统计数据
+type UserProfile struct {
+	User
+	TotalTrainingDays   int         `json:"total_training_days"`
+	TotalTrainingMinutes int         `json:"total_training_minutes"`
+	BraveryBadges       []Achievement `json:"bravery_badges"` // 假设 Achievement 是勋章模型
+	WeeklyActivity      []int       `json:"weekly_activity"`  // 例如，一周内每天的活跃度
+}
+
 
 
 
