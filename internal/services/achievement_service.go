@@ -81,12 +81,26 @@ func (s *AchievementService) GetAchievements(userID uuid.UUID) ([]AchievementInf
 }
 
 // GetUserBadges 获取用户已解锁的勋章列表
-func (s *AchievementService) GetUserBadges(userID uuid.UUID) ([]models.Achievement, error) {
-	var badges []models.Achievement
-	if err := s.db.Where("user_id = ?", userID).Find(&badges).Error; err != nil {
+func (s *AchievementService) GetUserBadges(userID uuid.UUID) ([]models.UserAchievement, error) {
+	var unlockedAchievements []models.Achievement
+	if err := s.db.Where("user_id = ?", userID).Find(&unlockedAchievements).Error; err != nil {
 		return nil, err
 	}
-	return badges, nil
+
+	var userBadges []models.UserAchievement
+	for _, ach := range unlockedAchievements {
+		if def, ok := achievementDefinitions[ach.AchievementType]; ok {
+			userBadges = append(userBadges, models.UserAchievement{
+				ID:              ach.ID,
+				AchievementType: ach.AchievementType,
+				Title:           def.Title,
+				Icon:            def.Icon,
+				Desc:            def.Desc,
+				UnlockedAt:      ach.UnlockedAt,
+			})
+		}
+	}
+	return userBadges, nil
 }
 
 

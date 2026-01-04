@@ -1,12 +1,13 @@
 # 多阶段构建：构建阶段
-FROM golang:1.24-alpine AS builder
+FROM golang:1.24 AS builder
 
 # 设置工作目录
 WORKDIR /app
 
 # 安装必要的工具
-RUN apk update && \
-    apk add --no-cache git ca-certificates tzdata
+RUN apt-get update && \
+    apt-get install -y git ca-certificates tzdata && \
+    rm -rf /var/lib/apt/lists/*
 
 # 复制 go mod 文件
 COPY go.mod go.sum ./
@@ -21,15 +22,17 @@ COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o fluent-life-api ./cmd/server/main.go
 
 # 运行阶段
-FROM alpine:latest
+FROM ubuntu:22.04
+
+# 设置时区避免交互式安装
+ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=Asia/Shanghai
 
 # 安装必要的运行时依赖
-RUN apk update && \
-    apk --no-cache add ca-certificates tzdata
-
-# 设置时区
-ENV TZ=Asia/Shanghai
-RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+RUN apt-get update && \
+    apt-get install -y ca-certificates tzdata wget && \
+    rm -rf /var/lib/apt/lists/* && \
+    ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 WORKDIR /app
 
@@ -38,8 +41,8 @@ COPY --from=builder /app/fluent-life-api .
 COPY --from=builder /app/configs ./configs
 
 # 创建非 root 用户
-RUN addgroup -g 1000 appuser && \
-    adduser -D -u 1000 -G appuser appuser && \
+RUN groupadd -g 1000 appuser && \
+    useradd -m -u 1000 -g appuser appuser && \
     chown -R appuser:appuser /app
 
 USER appuser
