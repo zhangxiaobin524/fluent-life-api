@@ -4,10 +4,8 @@ FROM golang:1.24-alpine AS builder
 # 设置工作目录
 WORKDIR /app
 
-# 配置 DNS 和镜像源，安装必要的工具
-RUN echo "nameserver 8.8.8.8" > /etc/resolv.conf && \
-    echo "nameserver 8.8.4.4" >> /etc/resolv.conf && \
-    apk update && \
+# 安装必要的工具
+RUN apk update && \
     apk add --no-cache git ca-certificates tzdata
 
 # 复制 go mod 文件
@@ -25,10 +23,8 @@ RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o fluent-life-api .
 # 运行阶段
 FROM alpine:latest
 
-# 配置 DNS，安装必要的运行时依赖
-RUN echo "nameserver 8.8.8.8" > /etc/resolv.conf && \
-    echo "nameserver 8.8.4.4" >> /etc/resolv.conf && \
-    apk update && \
+# 安装必要的运行时依赖
+RUN apk update && \
     apk --no-cache add ca-certificates tzdata
 
 # 设置时区

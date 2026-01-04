@@ -26,6 +26,9 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: fluent-life-api
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
     environment:
       ENVIRONMENT: production
       PORT: "8081"
