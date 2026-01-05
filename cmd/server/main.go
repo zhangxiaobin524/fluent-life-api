@@ -111,6 +111,11 @@ func main() {
 				training.GET("/records", trainingHandler.GetRecords)
 				training.GET("/stats", trainingHandler.GetStats)
 				training.GET("/meditation-progress", trainingHandler.GetMeditationProgress)
+				training.GET("/weekly-stats", trainingHandler.GetWeeklyStats)
+				training.GET("/skill-levels", trainingHandler.GetSkillLevels)
+				training.GET("/recommendations", trainingHandler.GetRecommendations)
+				training.GET("/progress-trend", trainingHandler.GetProgressTrend)
+				training.GET("/learning-partner-stats", trainingHandler.GetLearningPartnerStats)
 			}
 
 			// AI 导师
@@ -157,6 +162,7 @@ func main() {
 				collection.DELETE("/posts/:id", collectionHandler.UncollectPost)
 				collection.GET("/posts", collectionHandler.GetCollectedPosts)
 				collection.GET("/posts/:id/status", collectionHandler.CheckCollectionStatus)
+				collection.POST("/toggle/:id", collectionHandler.ToggleCollectPost) // 新增的切换收藏状态路由
 			}
 
 			// 成就系统

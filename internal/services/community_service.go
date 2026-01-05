@@ -8,10 +8,16 @@ import (
 
 type CommunityService struct {
 	db *gorm.DB
+	followService *FollowService
+	collectionService *CollectionService // Add CollectionService
 }
 
 func NewCommunityService(db *gorm.DB) *CommunityService {
-	return &CommunityService{db: db}
+	return &CommunityService{
+		db: db,
+		followService: NewFollowService(db),
+		collectionService: NewCollectionService(db), // Initialize CollectionService
+	}
 }
 
 func (s *CommunityService) CreatePost(userID uuid.UUID, content, tag, imageURL string) (*models.Post, error) {
@@ -60,15 +66,31 @@ func (s *CommunityService) GetPosts(page, pageSize int, sortBy, tag string, user
 		return nil, 0, err
 	}
 
-	// 如果提供了用户ID，标记用户是否已点赞
+	// 如果提供了用户ID，标记用户是否已点赞和是否关注了作者
 	if userID != nil {
 		for i := range posts {
 			for _, like := range posts[i].Likes {
 				if like.UserID == *userID {
-					posts[i].IsLiked = true // Assuming Post model has IsLiked field
+					posts[i].IsLiked = true
 					break
 				}
 			}
+			// 检查当前用户是否关注了帖子作者
+			if posts[i].User.ID != *userID { // 排除自己关注自己的情况
+				isFollowing, err := s.followService.IsFollowing(*userID, posts[i].User.ID)
+				if err != nil {
+					// 记录错误，但不中断流程
+					// log.Printf("Error checking follow status for user %s: %v", posts[i].User.ID, err)
+				}
+				posts[i].User.IsFollowing = isFollowing
+			}
+			// 检查当前用户是否收藏了帖子
+			isCollected, err := s.collectionService.IsCollected(*userID, posts[i].ID)
+			if err != nil {
+				// 记录错误，但不中断流程
+				// log.Printf("Error checking collection status for post %s: %v", posts[i].ID, err)
+			}
+			posts[i].IsCollected = isCollected
 		}
 	}
 
@@ -159,6 +181,11 @@ func (s *CommunityService) DeletePost(userID, postID uuid.UUID) error {
 		return err
 	}
 
+	// Delete associated post collections
+	if err := s.db.Where("post_id = ?", postID).Delete(&models.PostCollection{}).Error; err != nil {
+		return err
+	}
+
 	// Delete the post
 	if err := s.db.Delete(&post).Error; err != nil {
 		return err
@@ -226,6 +253,34 @@ func (s *CommunityService) GetUserPosts(targetUserID uuid.UUID, page, pageSize i
 	offset := (page - 1) * pageSize
 	if err := query.Preload("User").Preload("Likes").Order("created_at DESC").Offset(offset).Limit(pageSize).Find(&posts).Error; err != nil {
 		return nil, 0, err
+	}
+
+	// 如果提供了当前用户ID，标记用户是否已点赞和是否关注了作者
+	if currentUserID != nil {
+		for i := range posts {
+			for _, like := range posts[i].Likes {
+				if like.UserID == *currentUserID {
+					posts[i].IsLiked = true
+					break
+				}
+			}
+			// 检查当前用户是否关注了帖子作者
+			if posts[i].User.ID != *currentUserID { // 排除自己关注自己的情况
+				isFollowing, err := s.followService.IsFollowing(*currentUserID, posts[i].User.ID)
+				if err != nil {
+					// 记录错误，但不中断流程
+					// log.Printf("Error checking follow status for user %s: %v", posts[i].User.ID, err)
+				}
+				posts[i].User.IsFollowing = isFollowing
+			}
+			// 检查当前用户是否收藏了帖子
+			isCollected, err := s.collectionService.IsCollected(*currentUserID, posts[i].ID)
+			if err != nil {
+				// 记录错误，但不中断流程
+				// log.Printf("Error checking collection status for post %s: %v", posts[i].ID, err)
+			}
+			posts[i].IsCollected = isCollected
+		}
 	}
 
 	return posts, total, nil

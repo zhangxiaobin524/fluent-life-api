@@ -108,10 +108,19 @@ func (s *UserService) GetUserByID(userID uuid.UUID) (*models.User, error) {
 }
 
 // GetUserProfileWithStats 获取用户资料及统计数据
-func (s *UserService) GetUserProfileWithStats(userID uuid.UUID) (*models.UserProfile, error) {
+func (s *UserService) GetUserProfileWithStats(userID, currentUserID uuid.UUID) (*models.UserProfile, error) {
 	var user models.User
 	if err := s.db.First(&user, userID).Error; err != nil {
 		return nil, err
+	}
+
+	// 检查当前用户是否关注了该用户
+	if currentUserID != uuid.Nil && currentUserID != userID {
+		isFollowing, err := s.IsFollowing(currentUserID, userID)
+		if err != nil {
+			return nil, err
+		}
+		user.IsFollowing = isFollowing
 	}
 
 	totalTrainingDays, err := s.trainingService.GetTotalTrainingDays(userID)

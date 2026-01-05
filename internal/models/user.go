@@ -19,6 +19,7 @@ type User struct {
 	LastLoginAt  *time.Time `json:"last_login_at,omitempty"`
 	FollowersCount int `gorm:"default:0" json:"followers_count"` // 粉丝数量
 	FollowingCount int `gorm:"default:0" json:"following_count"` // 关注数量
+	IsFollowing    bool `gorm:"-" json:"is_following"`          // 是否关注了该用户 (瞬态字段)
 }
 
 func (u *User) BeforeCreate(tx *gorm.DB) error {

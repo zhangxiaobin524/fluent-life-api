@@ -228,7 +228,7 @@ func (s *TrainingService) GetTotalTrainingMinutes(userID uuid.UUID) (int, error)
 	return totalDurationSeconds / 60, err
 }
 
-func (s *TrainingService) GetMeditationProgress(userID uuid.UUID) ([]models.MeditationProgress, error) {
+func (s *TrainingService) GetMeditationProgress(userID uuid.UUID) (map[string]interface{}, error) {
 	var progress []models.MeditationProgress
 	if err := s.db.Where("user_id = ?", userID).Order("stage ASC").Find(&progress).Error; err != nil {
 		return nil, err
@@ -246,6 +246,163 @@ func (s *TrainingService) GetMeditationProgress(userID uuid.UUID) ([]models.Medi
 		}
 	}
 
-	return progress, nil
+	// 构建返回数据结构
+	unlockedStages := []int{}
+	progressDays := make(map[int]int)
+
+	for _, p := range progress {
+		if p.Unlocked {
+			unlockedStages = append(unlockedStages, p.Stage)
+		}
+		progressDays[p.Stage] = p.CompletedDays
+	}
+
+	// 确保至少有阶段1解锁
+	stage1Found := false
+	for _, stage := range unlockedStages {
+		if stage == 1 {
+			stage1Found = true
+			break
+		}
+	}
+	if !stage1Found {
+		unlockedStages = append([]int{1}, unlockedStages...)
+		if progressDays[1] == 0 {
+			progressDays[1] = 0
+		}
+	}
+
+	return map[string]interface{}{
+		"unlocked_stages": unlockedStages,
+		"progress_days":   progressDays,
+	}, nil
+}
+
+// GetWeeklyStats 获取用户过去7天的训练统计
+func (s *TrainingService) GetWeeklyStats(userID uuid.UUID) ([]map[string]interface{}, error) {
+	var weeklyStats []map[string]interface{}
+	
+	// 获取过去7天的日期
+	for i := 6; i >= 0; i-- {
+		date := time.Now().AddDate(0, 0, -i)
+		var count int64
+		s.db.Model(&models.TrainingRecord{}).
+			Where("user_id = ? AND DATE(timestamp) = DATE(?)", userID, date).
+			Count(&count)
+		
+		weeklyStats = append(weeklyStats, map[string]interface{}{
+			"date":  date.Format("2006-01-02"),
+			"count": count,
+		})
+	}
+	
+	return weeklyStats, nil
+}
+
+// GetSkillLevels 获取用户的技能水平
+func (s *TrainingService) GetSkillLevels(userID uuid.UUID) (map[string]int, error) {
+	skillLevels := make(map[string]int)
+	
+	// 定义技能类型
+	skillTypes := []string{"meditation", "airflow", "exposure", "practice"}
+	
+	for _, skillType := range skillTypes {
+		var totalDuration int
+		s.db.Model(&models.TrainingRecord{}).
+			Where("user_id = ? AND type = ?", userID, skillType).
+			Select("COALESCE(SUM(duration), 0)").
+			Scan(&totalDuration)
+		
+		// 简单的技能水平计算：每600秒（10分钟）训练增加1级
+		skillLevels[skillType] = totalDuration / 600
+	}
+	
+	return skillLevels, nil
+}
+
+// Recommendation 结构体定义
+type Recommendation struct {
+	ID          string `json:"id"`
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	Type        string `json:"type"` // meditation | airflow | exposure | practice
+}
+
+// GetRecommendations 获取个性化推荐
+func (s *TrainingService) GetRecommendations(userID uuid.UUID) ([]Recommendation, error) {
+	// 这里可以根据用户的训练数据、技能水平等进行复杂的推荐逻辑
+	// 目前先返回一些模拟数据
+	recommendations := []Recommendation{
+		{
+			ID:          "rec1",
+			Title:       "深度冥想：放松身心",
+			Description: "尝试一次15分钟的深度冥想，帮助你缓解压力，提升专注力。",
+			Type:        "meditation",
+		},
+		{
+			ID:          "rec2",
+			Title:       "气流练习：掌握呼吸",
+			Description: "进行10分钟的气流控制练习，改善你的发声技巧和气息稳定性。",
+			Type:        "airflow",
+		},
+		{
+			ID:          "rec3",
+			Title:       "情景对话：勇敢开口",
+			Description: "参与一次模拟日常对话的练习，提升你在真实场景中的表达自信。",
+			Type:        "exposure",
+		},
+		{
+			ID:          "rec4",
+			Title:       "自由朗读：提升语感",
+			Description: "选择一篇你感兴趣的文章进行自由朗读，培养语感和表达流畅度。",
+			Type:        "practice",
+		},
+	}
+	
+	return recommendations, nil
+}
+
+// ProgressTrendData 结构体定义
+type ProgressTrendData struct {
+	Date  string `json:"date"`
+	Value int    `json:"value"`
+}
+
+// GetProgressTrend 获取用户的进步趋势
+func (s *TrainingService) GetProgressTrend(userID uuid.UUID) ([]ProgressTrendData, error) {
+	var trendData []ProgressTrendData
+	
+	// 获取过去30天的趋势数据
+	for i := 29; i >= 0; i-- {
+		date := time.Now().AddDate(0, 0, -i)
+		var totalDuration int
+		s.db.Model(&models.TrainingRecord{}).
+			Where("user_id = ? AND DATE(timestamp) = DATE(?)", userID, date).
+			Select("COALESCE(SUM(duration), 0)").
+			Scan(&totalDuration)
+		
+		trendData = append(trendData, ProgressTrendData{
+			Date:  date.Format("2006-01-02"),
+			Value: totalDuration / 60, // 转换为分钟
+		})
+	}
+	
+	return trendData, nil
+}
+
+// LearningPartnerStats 结构体定义
+type LearningPartnerStats struct {
+	OnlineCount int `json:"online_count"`
+	TodayActive int `json:"today_active"`
+}
+
+// GetLearningPartnerStats 获取学习伙伴统计数据
+func (s *TrainingService) GetLearningPartnerStats(userID uuid.UUID) (LearningPartnerStats, error) {
+	// 真实的学习伙伴统计需要复杂的逻辑，例如在线用户追踪、活跃度计算等
+	// 这里先返回模拟数据
+	return LearningPartnerStats{
+		OnlineCount: 123, // 模拟在线人数
+		TodayActive: 456, // 模拟今日活跃人数
+	}, nil
 }
 

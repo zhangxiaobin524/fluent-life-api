@@ -31,13 +31,17 @@ func (h *UserHandler) GetProfile(c *gin.Context) {
 		return
 	}
 
-	var user models.User
-	if err := h.db.First(&user, userID).Error; err != nil {
-		response.NotFound(c, "用户不存在")
+	userProfile, err := h.userService.GetUserProfileWithStats(userID, userID) // 获取当前用户的资料，并检查是否关注了自己（虽然逻辑上不会发生）
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			response.NotFound(c, "用户不存在")
+			return
+		}
+		response.InternalError(c, "获取用户资料失败")
 		return
 	}
 
-	response.Success(c, user, "获取成功")
+	response.Success(c, userProfile, "获取成功")
 }
 
 func (h *UserHandler) GetUserProfileByID(c *gin.Context) {
@@ -48,7 +52,9 @@ func (h *UserHandler) GetUserProfileByID(c *gin.Context) {
 		return
 	}
 
-	userProfile, err := h.userService.GetUserProfileWithStats(userID)
+	currentUserID, _ := utils.GetUserID(c) // 获取当前用户ID，如果未登录则为uuid.Nil
+
+	userProfile, err := h.userService.GetUserProfileWithStats(userID, currentUserID)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			response.NotFound(c, "用户不存在")

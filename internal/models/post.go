@@ -15,11 +15,14 @@ type Post struct {
 	Image         string    `gorm:"type:text" json:"image"`
 	LikesCount    int       `gorm:"not null;default:0" json:"likes_count"`
 	CommentsCount int       `gorm:"not null;default:0" json:"comments_count"`
+	FavoritesCount int      `gorm:"not null;default:0" json:"favorites_count"`
 	CreatedAt     time.Time `gorm:"index:idx_posts_created_at" json:"created_at"`
 	UpdatedAt     time.Time `json:"updated_at"`
 
 	// Transient field to indicate if the current user has liked the post
 	IsLiked bool `gorm:"-" json:"is_liked"`
+	// Transient field to indicate if the current user has collected the post
+	IsCollected bool `gorm:"-" json:"is_collected"`
 
 	User     User       `gorm:"foreignKey:UserID" json:"user"`
 	Likes    []PostLike `gorm:"foreignKey:PostID" json:"likes,omitempty"`

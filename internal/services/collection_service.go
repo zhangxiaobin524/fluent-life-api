@@ -16,25 +16,54 @@ func NewCollectionService(db *gorm.DB) *CollectionService {
 
 // CollectPost 收藏帖子
 func (s *CollectionService) CollectPost(userID, postID uuid.UUID) error {
-	// 检查是否已经收藏
-	var existingCollection models.PostCollection
-	err := s.db.Where("user_id = ? AND post_id = ?", userID, postID).First(&existingCollection).Error
-	if err == nil {
-		return nil // 已经收藏，直接返回成功
-	}
+	return s.db.Transaction(func(tx *gorm.DB) error {
+		// 检查是否已经收藏
+		var existingCollection models.PostCollection
+		err := tx.Where("user_id = ? AND post_id = ?", userID, postID).First(&existingCollection).Error
+		if err == nil {
+			return nil // 已经收藏，直接返回成功
+		}
 
-	// 创建收藏记录
-	collection := models.PostCollection{
-		UserID: userID,
-		PostID: postID,
-	}
+		// 创建收藏记录
+		collection := models.PostCollection{
+			UserID: userID,
+			PostID: postID,
+		}
+		if err := tx.Create(&collection).Error; err != nil {
+			return err
+		}
 
-	return s.db.Create(&collection).Error
+		// 更新帖子的收藏数量
+		if err := tx.Model(&models.Post{}).Where("id = ?", postID).
+			UpdateColumn("favorites_count", gorm.Expr("favorites_count + ?", 1)).Error; err != nil {
+			return err
+		}
+
+		return nil
+	})
 }
 
 // UncollectPost 取消收藏
 func (s *CollectionService) UncollectPost(userID, postID uuid.UUID) error {
-	return s.db.Where("user_id = ? AND post_id = ?", userID, postID).Delete(&models.PostCollection{}).Error
+	return s.db.Transaction(func(tx *gorm.DB) error {
+		// 删除收藏记录
+		result := tx.Where("user_id = ? AND post_id = ?", userID, postID).Delete(&models.PostCollection{})
+		if result.Error != nil {
+			return result.Error
+		}
+		// 如果没有记录被删除，则直接返回成功
+		if result.RowsAffected == 0 {
+			return nil
+		}
+
+		// 更新帖子的收藏数量
+		if err := tx.Model(&models.Post{}).Where("id = ?", postID).
+			UpdateColumn("favorites_count", gorm.Expr("favorites_count - ?", 1)).Error; err != nil {
+			return err
+		}
+
+		return nil
+	})
 }
 
 // IsCollected 检查是否已收藏
@@ -65,6 +94,15 @@ func (s *CollectionService) GetCollectedPosts(userID uuid.UUID, page, pageSize i
 		Offset(offset).
 		Limit(pageSize).
 		Find(&posts).Error
+
+	if err != nil {
+		return posts, total, err
+	}
+
+	// 由于这些帖子都是从收藏表中获取的，所以它们都是已收藏的
+	for i := range posts {
+		posts[i].IsCollected = true
+	}
 
 	return posts, total, err
 }

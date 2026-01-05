@@ -124,6 +124,86 @@ func (h *TrainingHandler) GetMeditationProgress(c *gin.Context) {
 	response.Success(c, progress, "获取成功")
 }
 
+func (h *TrainingHandler) GetWeeklyStats(c *gin.Context) {
+	userID, ok := utils.GetUserID(c)
+	if !ok {
+		response.Unauthorized(c, "未找到用户信息")
+		return
+	}
+
+	weeklyStats, err := h.trainingService.GetWeeklyStats(userID)
+	if err != nil {
+		response.InternalError(c, "获取周统计失败")
+		return
+	}
+
+	response.Success(c, gin.H{"weekly_stats": weeklyStats}, "获取成功")
+}
+
+func (h *TrainingHandler) GetSkillLevels(c *gin.Context) {
+	userID, ok := utils.GetUserID(c)
+	if !ok {
+		response.Unauthorized(c, "未找到用户信息")
+		return
+	}
+
+	skillLevels, err := h.trainingService.GetSkillLevels(userID)
+	if err != nil {
+		response.InternalError(c, "获取技能水平失败")
+		return
+	}
+
+	response.Success(c, gin.H{"skill_levels": skillLevels}, "获取成功")
+}
+
+func (h *TrainingHandler) GetRecommendations(c *gin.Context) {
+	userID, ok := utils.GetUserID(c)
+	if !ok {
+		response.Unauthorized(c, "未找到用户信息")
+		return
+	}
+
+	recommendations, err := h.trainingService.GetRecommendations(userID)
+	if err != nil {
+		response.InternalError(c, "获取推荐失败")
+		return
+	}
+
+	response.Success(c, gin.H{"recommendations": recommendations}, "获取成功")
+}
+
+func (h *TrainingHandler) GetProgressTrend(c *gin.Context) {
+	userID, ok := utils.GetUserID(c)
+	if !ok {
+		response.Unauthorized(c, "未找到用户信息")
+		return
+	}
+
+	trendData, err := h.trainingService.GetProgressTrend(userID)
+	if err != nil {
+		response.InternalError(c, "获取进步趋势失败")
+		return
+	}
+
+	response.Success(c, gin.H{"trend_data": trendData}, "获取成功")
+}
+
+func (h *TrainingHandler) GetLearningPartnerStats(c *gin.Context) {
+	userID, ok := utils.GetUserID(c)
+	if !ok {
+		response.Unauthorized(c, "未找到用户信息")
+		return
+	}
+
+	stats, err := h.trainingService.GetLearningPartnerStats(userID)
+	if err != nil {
+		response.InternalError(c, "获取学习伙伴统计失败")
+		return
+	}
+
+	response.Success(c, gin.H{"learning_partner_stats": stats}, "获取成功")
+}
+
 
 
 

@@ -47,7 +47,13 @@ func (h *FollowHandler) FollowUser(c *gin.Context) {
 		return
 	}
 
-	response.Success(c, nil, "关注成功")
+	followersCount, _, err := h.followService.GetFollowCount(followingID)
+	if err != nil {
+		response.InternalError(c, "获取粉丝数量失败")
+		return
+	}
+
+	response.Success(c, gin.H{"is_following": true, "followers_count": followersCount}, "关注成功")
 }
 
 // UnfollowUser 取消关注
@@ -70,7 +76,13 @@ func (h *FollowHandler) UnfollowUser(c *gin.Context) {
 		return
 	}
 
-	response.Success(c, nil, "取消关注成功")
+	followersCount, _, err := h.followService.GetFollowCount(followingID)
+	if err != nil {
+		response.InternalError(c, "获取粉丝数量失败")
+		return
+	}
+
+	response.Success(c, gin.H{"is_following": false, "followers_count": followersCount}, "取消关注成功")
 }
 
 // GetFollowers 获取粉丝列表

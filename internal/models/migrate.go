@@ -16,7 +16,7 @@ func AutoMigrate(db *gorm.DB) error {
 		&AIConversation{},
 		&PracticeRoom{},
 		&PracticeRoomMember{},
-		&UserFollow{},
+		&Follow{},
 		&PostCollection{},
 	)
 }

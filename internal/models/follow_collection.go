@@ -7,15 +7,20 @@ import (
 	"gorm.io/gorm"
 )
 
-// UserFollow 用户关注关系
-type UserFollow struct {
+// Follow 用户关注关系
+type Follow struct {
 	ID          uuid.UUID `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
 	FollowerID  uuid.UUID `gorm:"type:uuid;not null;uniqueIndex:idx_user_follow_follower_following;index:idx_user_follow_follower" json:"follower_id"`  // 关注者
-	FollowingID uuid.UUID `gorm:"type:uuid;not null;uniqueIndex:idx_user_follow_follower_following;index:idx_user_follow_following" json:"following_id"` // 被关注者
+	FolloweeID uuid.UUID `gorm:"type:uuid;not null;uniqueIndex:idx_user_follow_follower_following;index:idx_user_follow_following" json:"followee_id"` // 被关注者
 	CreatedAt   time.Time `json:"created_at"`
 
 	Follower  User `gorm:"foreignKey:FollowerID" json:"follower,omitempty"`
-	Following User `gorm:"foreignKey:FollowingID" json:"following,omitempty"`
+	Followee User `gorm:"foreignKey:FolloweeID" json:"followee,omitempty"`
+}
+
+// TableName specifies the table name for the Follow model
+func (Follow) TableName() string {
+	return "follows"
 }
 
 // PostCollection 帖子收藏
@@ -29,7 +34,7 @@ type PostCollection struct {
 	Post Post `gorm:"foreignKey:PostID" json:"post,omitempty"`
 }
 
-func (uf *UserFollow) BeforeCreate(tx *gorm.DB) error {
+func (uf *Follow) BeforeCreate(tx *gorm.DB) error {
 	if uf.ID == uuid.Nil {
 		uf.ID = uuid.New()
 	}
