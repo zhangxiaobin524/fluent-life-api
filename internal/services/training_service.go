@@ -213,7 +213,8 @@ func (s *TrainingService) GetTotalTrainingSessions(userID uuid.UUID) (int64, err
 	var totalSessions int64
 	err := s.db.Model(&models.TrainingRecord{}).
 		Where("user_id = ?", userID).
-		Count(&totalSessions).Error
+		Select("COUNT(*)").
+		Scan(&totalSessions).Error
 	return totalSessions, err
 }
 
