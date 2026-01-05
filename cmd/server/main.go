@@ -69,13 +69,15 @@ func main() {
 
 	// 初始化处理器
 	authHandler := handlers.NewAuthHandler(db, cfg)
-	userHandler := handlers.NewUserHandler(db)
+	userHandler := handlers.NewUserHandler(db, cfg)
 	trainingHandler := handlers.NewTrainingHandler(db, cfg)
 	aiHandler := handlers.NewAIHandler(db, cfg)
 	communityHandler := handlers.NewCommunityHandler(db)
 	achievementHandler := handlers.NewAchievementHandler(db)
 	practiceRoomHandler := handlers.NewPracticeRoomHandler(db, roomHub)
 	wsHandler := handlers.NewWebSocketHandler(roomHub, db, cfg.JWTSecret)
+	followHandler := handlers.NewFollowHandler(db)
+	collectionHandler := handlers.NewCollectionHandler(db)
 
 	// API 路由组
 	v1 := r.Group("/api/v1")
@@ -130,6 +132,31 @@ func main() {
 				community.POST("/posts/:id/comments", communityHandler.CreateComment)
 				community.DELETE("/posts/:id", communityHandler.DeletePost)
 				community.GET("/users/:id/posts", communityHandler.GetUserPosts)
+				community.DELETE("/comments/:id", communityHandler.DeleteComment)
+				community.POST("/comments/:id/like", communityHandler.ToggleCommentLike)
+				community.GET("/users/:id/follow-status", communityHandler.CheckUserFollowStatus)
+				community.GET("/posts/:id/collection-status", communityHandler.CheckPostCollectionStatus)
+				community.GET("/users/:id/follow-count", communityHandler.GetUserFollowCount)
+				community.GET("/posts/:id/collection-count", communityHandler.GetPostCollectionCount)
+			}
+
+			// 关注功能
+			follow := authenticated.Group("/follow")
+			{
+				follow.POST("/users/:id", followHandler.FollowUser)
+				follow.DELETE("/users/:id", followHandler.UnfollowUser)
+				follow.GET("/users/:id/status", followHandler.CheckFollowStatus)
+				follow.GET("/users/:id/followers", followHandler.GetFollowers)
+				follow.GET("/users/:id/following", followHandler.GetFollowing)
+			}
+
+			// 收藏功能
+			collection := authenticated.Group("/collection")
+			{
+				collection.POST("/posts/:id", collectionHandler.CollectPost)
+				collection.DELETE("/posts/:id", collectionHandler.UncollectPost)
+				collection.GET("/posts", collectionHandler.GetCollectedPosts)
+				collection.GET("/posts/:id/status", collectionHandler.CheckCollectionStatus)
 			}
 
 			// 成就系统

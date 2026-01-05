@@ -114,6 +114,124 @@ func (h *UserHandler) GetStats(c *gin.Context) {
 	response.Success(c, stats, "获取成功")
 }
 
+// FollowUser 处理关注用户的请求
+func (h *UserHandler) FollowUser(c *gin.Context) {
+	followerID, ok := utils.GetUserID(c)
+	if !ok {
+		response.Unauthorized(c, "未找到用户信息")
+		return
+	}
+
+	followeeIDStr := c.Param("id")
+	followeeID, err := uuid.Parse(followeeIDStr)
+	if err != nil {
+		response.BadRequest(c, "无效的被关注用户ID")
+		return
+	}
+
+	if err := h.userService.FollowUser(followerID, followeeID); err != nil {
+		if err == gorm.ErrInvalidData {
+			response.BadRequest(c, "不能关注自己")
+			return
+		}
+		response.InternalError(c, "关注失败")
+		return
+	}
+
+	response.Success(c, nil, "关注成功")
+}
+
+// UnfollowUser 处理取关用户的请求
+func (h *UserHandler) UnfollowUser(c *gin.Context) {
+	followerID, ok := utils.GetUserID(c)
+	if !ok {
+		response.Unauthorized(c, "未找到用户信息")
+		return
+	}
+
+	followeeIDStr := c.Param("id")
+	followeeID, err := uuid.Parse(followeeIDStr)
+	if err != nil {
+		response.BadRequest(c, "无效的被关注用户ID")
+		return
+	}
+
+	if err := h.userService.UnfollowUser(followerID, followeeID); err != nil {
+		if err == gorm.ErrInvalidData {
+			response.BadRequest(c, "不能取关自己")
+			return
+		}
+		response.InternalError(c, "取关失败")
+		return
+	}
+
+	response.Success(c, nil, "取关成功")
+}
+
+// GetFollowers 获取用户的粉丝列表
+func (h *UserHandler) GetFollowers(c *gin.Context) {
+	userIDStr := c.Param("id")
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		response.BadRequest(c, "无效的用户ID")
+		return
+	}
+
+	page, pageSize := utils.GetPaginationParams(c)
+
+	followers, total, err := h.userService.GetFollowers(userID, page, pageSize)
+	if err != nil {
+		response.InternalError(c, "获取粉丝列表失败")
+		return
+	}
+
+	response.Success(c, gin.H{"followers": followers, "total": total}, "获取粉丝列表成功")
+}
+
+// GetFollowing 获取用户关注的人列表
+func (h *UserHandler) GetFollowing(c *gin.Context) {
+	userIDStr := c.Param("id")
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		response.BadRequest(c, "无效的用户ID")
+		return
+	}
+
+	page, pageSize := utils.GetPaginationParams(c)
+
+	following, total, err := h.userService.GetFollowing(userID, page, pageSize)
+	if err != nil {
+		response.InternalError(c, "获取关注列表失败")
+		return
+	}
+
+	response.Success(c, gin.H{"following": following, "total": total}, "获取关注列表成功")
+}
+
+// CheckIsFollowing 检查当前用户是否关注了目标用户
+func (h *UserHandler) CheckIsFollowing(c *gin.Context) {
+	followerID, ok := utils.GetUserID(c)
+	if !ok {
+		response.Unauthorized(c, "未找到用户信息")
+		return
+	}
+
+	followeeIDStr := c.Param("id")
+	followeeID, err := uuid.Parse(followeeIDStr)
+	if err != nil {
+		response.BadRequest(c, "无效的被关注用户ID")
+		return
+	}
+
+	isFollowing, err := h.userService.IsFollowing(followerID, followeeID)
+	if err != nil {
+		response.InternalError(c, "检查关注状态失败")
+		return
+	}
+
+	response.Success(c, gin.H{"is_following": isFollowing}, "获取关注状态成功")
+}
+
 
 
 

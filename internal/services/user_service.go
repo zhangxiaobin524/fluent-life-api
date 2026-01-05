@@ -151,6 +151,112 @@ func (s *UserService) GetUserProfileWithStats(userID uuid.UUID) (*models.UserPro
 	return userProfile, nil
 }
 
+// FollowUser 处理用户关注逻辑
+func (s *UserService) FollowUser(followerID, followeeID uuid.UUID) error {
+	if followerID == followeeID {
+		return gorm.ErrInvalidData // 用户不能关注自己
+	}
+
+	// 检查是否已关注
+	var existingFollow models.Follow
+	err := s.db.Where("follower_id = ? AND followee_id = ?", followerID, followeeID).First(&existingFollow).Error
+	if err == nil {
+		return nil // 已经关注，无需重复操作
+	}
+	if err != gorm.ErrRecordNotFound {
+		return err // 其他数据库错误
+	}
+
+	// 创建关注记录
+	follow := models.Follow{
+		FollowerID: followerID,
+		FolloweeID: followeeID,
+	}
+	if err := s.db.Create(&follow).Error; err != nil {
+		return err
+	}
+
+	// 更新关注者和被关注者的计数
+	s.db.Model(&models.User{}).Where("id = ?", followerID).Update("following_count", gorm.Expr("following_count + ?", 1))
+	s.db.Model(&models.User{}).Where("id = ?", followeeID).Update("followers_count", gorm.Expr("followers_count + ?", 1))
+
+	return nil
+}
+
+// UnfollowUser 处理用户取关逻辑
+func (s *UserService) UnfollowUser(followerID, followeeID uuid.UUID) error {
+	if followerID == followeeID {
+		return gorm.ErrInvalidData // 用户不能取关自己
+	}
+
+	// 删除关注记录
+	result := s.db.Where("follower_id = ? AND followee_id = ?", followerID, followeeID).Delete(&models.Follow{})
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return nil // 没有关注关系，无需操作
+	}
+
+	// 更新关注者和被关注者的计数
+	s.db.Model(&models.User{}).Where("id = ?", followerID).Update("following_count", gorm.Expr("following_count - ?", 1))
+	s.db.Model(&models.User{}).Where("id = ?", followeeID).Update("followers_count", gorm.Expr("followers_count - ?", 1))
+
+	return nil
+}
+
+// GetFollowers 获取用户的粉丝列表
+func (s *UserService) GetFollowers(userID uuid.UUID, page, pageSize int) ([]models.User, int64, error) {
+	var followers []models.User
+	var total int64
+
+	// 获取粉丝ID
+	var followerIDs []uuid.UUID
+	s.db.Model(&models.Follow{}).Where("followee_id = ?", userID).Pluck("follower_id", &followerIDs)
+
+	if len(followerIDs) == 0 {
+		return []models.User{}, 0, nil
+	}
+
+	// 获取粉丝用户详情
+	query := s.db.Model(&models.User{}).Where("id IN (?)", followerIDs)
+	query.Count(&total)
+	query.Limit(pageSize).Offset((page - 1) * pageSize).Find(&followers)
+
+	return followers, total, nil
+}
+
+// GetFollowing 获取用户关注的人列表
+func (s *UserService) GetFollowing(userID uuid.UUID, page, pageSize int) ([]models.User, int64, error) {
+	var following []models.User
+	var total int64
+
+	// 获取关注的人的ID
+	var followeeIDs []uuid.UUID
+	s.db.Model(&models.Follow{}).Where("follower_id = ?", userID).Pluck("followee_id", &followeeIDs)
+
+	if len(followeeIDs) == 0 {
+		return []models.User{}, 0, nil
+	}
+
+	// 获取关注的人的用户详情
+	query := s.db.Model(&models.User{}).Where("id IN (?)", followeeIDs)
+	query.Count(&total)
+	query.Limit(pageSize).Offset((page - 1) * pageSize).Find(&following)
+
+	return following, total, nil
+}
+
+// IsFollowing 检查一个用户是否关注了另一个用户
+func (s *UserService) IsFollowing(followerID, followeeID uuid.UUID) (bool, error) {
+	var count int64
+	err := s.db.Model(&models.Follow{}).Where("follower_id = ? AND followee_id = ?", followerID, followeeID).Count(&count).Error
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
+}
+
 
 
 

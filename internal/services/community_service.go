@@ -14,11 +14,12 @@ func NewCommunityService(db *gorm.DB) *CommunityService {
 	return &CommunityService{db: db}
 }
 
-func (s *CommunityService) CreatePost(userID uuid.UUID, content, tag string) (*models.Post, error) {
+func (s *CommunityService) CreatePost(userID uuid.UUID, content, tag, imageURL string) (*models.Post, error) {
 	post := models.Post{
 		UserID:        userID,
 		Content:       content,
 		Tag:           tag,
+		Image:         imageURL, // 保存图片URL
 		LikesCount:    0,
 		CommentsCount: 0,
 	}
@@ -30,14 +31,32 @@ func (s *CommunityService) CreatePost(userID uuid.UUID, content, tag string) (*m
 	return &post, nil
 }
 
-func (s *CommunityService) GetPosts(page, pageSize int, userID *uuid.UUID) ([]models.Post, int64, error) {
+func (s *CommunityService) GetPosts(page, pageSize int, sortBy, tag string, userID *uuid.UUID) ([]models.Post, int64, error) {
 	var posts []models.Post
 	var total int64
 
-	s.db.Model(&models.Post{}).Count(&total)
+	query := s.db.Model(&models.Post{})
+
+	// Filtering by tag
+	if tag != "" {
+		query = query.Where("tag = ?", tag)
+	}
+
+	// Count total before applying pagination
+	query.Count(&total)
+
+	// Sorting logic
+	switch sortBy {
+	case "likes_count":
+		query = query.Order("likes_count DESC")
+	case "comments_count":
+		query = query.Order("comments_count DESC")
+	default: // Default to created_at DESC
+		query = query.Order("created_at DESC")
+	}
 
 	offset := (page - 1) * pageSize
-	if err := s.db.Preload("User").Preload("Likes").Order("created_at DESC").Offset(offset).Limit(pageSize).Find(&posts).Error; err != nil {
+	if err := query.Preload("User").Preload("Likes").Offset(offset).Limit(pageSize).Find(&posts).Error; err != nil {
 		return nil, 0, err
 	}
 
@@ -46,8 +65,8 @@ func (s *CommunityService) GetPosts(page, pageSize int, userID *uuid.UUID) ([]mo
 		for i := range posts {
 			for _, like := range posts[i].Likes {
 				if like.UserID == *userID {
-					// 这里我们需要一个临时字段来存储点赞状态
-					// 但由于Post模型没有这个字段，我们可以在handler层处理
+					posts[i].IsLiked = true // Assuming Post model has IsLiked field
+					break
 				}
 			}
 		}
@@ -121,12 +140,21 @@ func (s *CommunityService) DeletePost(userID, postID uuid.UUID) error {
 		return gorm.ErrRecordNotFound // Or a custom error for unauthorized
 	}
 
-	// Delete associated comments
+	// Delete associated comments and their likes
+	var comments []models.Comment
+	if err := s.db.Where("post_id = ?", postID).Find(&comments).Error; err != nil {
+		return err
+	}
+	for _, comment := range comments {
+		if err := s.db.Where("comment_id = ?", comment.ID).Delete(&models.CommentLike{}).Error; err != nil {
+			return err
+		}
+	}
 	if err := s.db.Where("post_id = ?", postID).Delete(&models.Comment{}).Error; err != nil {
 		return err
 	}
 
-	// Delete associated likes
+	// Delete associated post likes
 	if err := s.db.Where("post_id = ?", postID).Delete(&models.PostLike{}).Error; err != nil {
 		return err
 	}
@@ -137,6 +165,55 @@ func (s *CommunityService) DeletePost(userID, postID uuid.UUID) error {
 	}
 
 	return nil
+}
+
+func (s *CommunityService) DeleteComment(userID, commentID uuid.UUID) error {
+	var comment models.Comment
+	if err := s.db.First(&comment, commentID).Error; err != nil {
+		return err // gorm.ErrRecordNotFound if not found
+	}
+
+	if comment.UserID != userID {
+		return gorm.ErrRecordNotFound // Or a custom error for unauthorized
+	}
+
+	// Delete associated comment likes
+	if err := s.db.Where("comment_id = ?", commentID).Delete(&models.CommentLike{}).Error; err != nil {
+		return err
+	}
+
+	// Delete the comment
+	if err := s.db.Delete(&comment).Error; err != nil {
+		return err
+	}
+
+	// Decrement comments_count in the associated post
+	s.db.Model(&models.Post{}).Where("id = ?", comment.PostID).UpdateColumn("comments_count", gorm.Expr("comments_count - 1"))
+
+	return nil
+}
+
+func (s *CommunityService) ToggleCommentLike(userID, commentID uuid.UUID) (bool, error) {
+	var like models.CommentLike
+	err := s.db.Where("user_id = ? AND comment_id = ?", userID, commentID).First(&like).Error
+
+	if err == gorm.ErrRecordNotFound {
+		// 点赞
+		like = models.CommentLike{
+			UserID:    userID,
+			CommentID: commentID,
+		}
+		s.db.Create(&like)
+		s.db.Model(&models.Comment{}).Where("id = ?", commentID).UpdateColumn("likes_count", gorm.Expr("likes_count + 1"))
+		return true, nil
+	} else if err == nil {
+		// 取消点赞
+		s.db.Delete(&like)
+		s.db.Model(&models.Comment{}).Where("id = ?", commentID).UpdateColumn("likes_count", gorm.Expr("likes_count - 1"))
+		return false, nil
+	}
+
+	return false, err
 }
 
 func (s *CommunityService) GetUserPosts(targetUserID uuid.UUID, page, pageSize int, currentUserID *uuid.UUID) ([]models.Post, int64, error) {

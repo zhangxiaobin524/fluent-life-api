@@ -17,6 +17,8 @@ type User struct {
 	CreatedAt    time.Time  `json:"created_at"`
 	UpdatedAt    time.Time  `json:"updated_at"`
 	LastLoginAt  *time.Time `json:"last_login_at,omitempty"`
+	FollowersCount int `gorm:"default:0" json:"followers_count"` // 粉丝数量
+	FollowingCount int `gorm:"default:0" json:"following_count"` // 关注数量
 }
 
 func (u *User) BeforeCreate(tx *gorm.DB) error {
@@ -40,7 +42,7 @@ type UserAchievement struct {
 type UserProfile struct {
 	User
 	TotalTrainingDays   int             `json:"total_training_days"`
-	TotalTrainingSessions int             `json:"total_training_sessions"`
+	TotalTrainingSessions int64           `json:"total_training_sessions"`
 	TotalTrainingMinutes int             `json:"total_training_minutes"`
 	BraveryBadges       []UserAchievement `json:"bravery_badges"` // 假设 Achievement 是勋章模型
 	WeeklyActivity      []int           `json:"weekly_activity"`  // 例如，一周内每天的活跃度

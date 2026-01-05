@@ -209,8 +209,8 @@ func (s *TrainingService) GetTotalTrainingCounts(userID uuid.UUID) (int, error) 
 }
 
 // GetTotalTrainingSessions 获取用户总锻炼会话次数
-func (s *TrainingService) GetTotalTrainingSessions(userID uuid.UUID) (int, error) {
-	var totalSessions int
+func (s *TrainingService) GetTotalTrainingSessions(userID uuid.UUID) (int64, error) {
+	var totalSessions int64
 	err := s.db.Model(&models.TrainingRecord{}).
 		Where("user_id = ?", userID).
 		Count(&totalSessions).Error

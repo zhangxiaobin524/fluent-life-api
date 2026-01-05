@@ -11,10 +11,13 @@ func AutoMigrate(db *gorm.DB) error {
 		&Post{},
 		&PostLike{},
 		&Comment{},
+		&CommentLike{}, // Add CommentLike here
 		&Achievement{},
 		&AIConversation{},
 		&PracticeRoom{},
 		&PracticeRoomMember{},
+		&UserFollow{},
+		&PostCollection{},
 	)
 }
 
