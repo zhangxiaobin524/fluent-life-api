@@ -181,9 +181,9 @@ func (h *WebSocketHandler) HandleWebSocket(c *gin.Context) {
 					if onMicMemberID != uuid.Nil {
 						// 有成员在麦上，转移房主给第一个在麦上的成员
 						if err := h.practiceRoomService.TransferHost(roomID, onMicMemberID); err != nil {
-							log.Printf("转移房主失败: %v", err)
+							log.Printf("[OnLeave] 转移房主失败: %v", err)
 						} else {
-							log.Printf("房主已转移给用户 %s", onMicMemberID)
+							log.Printf("[OnLeave] 房主已转移给用户 %s", onMicMemberID)
 							// 广播房主变更消息
 							h.hub.Broadcast <- hub.Message{
 								Type:      hub.MessageTypeRoomUpdate,
@@ -198,14 +198,19 @@ func (h *WebSocketHandler) HandleWebSocket(c *gin.Context) {
 						h.db.Model(&models.PracticeRoomMember{}).Where("room_id = ?", roomID).Count(&dbMemberCount)
 						hubMemberCount := h.hub.GetRoomMemberCount(roomID.String())
 
+						log.Printf("[OnLeave] 房主离开，房间 %s Hub成员数: %d, DB成员数: %d", roomID, hubMemberCount, dbMemberCount)
+
 						// 如果 Hub 和数据库都没有成员了，关闭房间
 						if hubMemberCount == 0 && dbMemberCount == 0 {
 							var room models.PracticeRoom
 							if err := h.db.First(&room, "id = ?", roomID).Error; err == nil {
 								room.IsActive = false
 								room.CurrentMembers = 0
-								h.db.Save(&room)
-								log.Printf("房间 %s 已关闭（房主离开且没有人在麦上）", roomID)
+								if err := h.db.Save(&room).Error; err != nil {
+									log.Printf("[OnLeave] ❌ 房主离开后更新房间 %s 状态失败: %v", roomID, err)
+								} else {
+									log.Printf("[OnLeave] ✅ 房间 %s 已关闭（房主离开且没有人在麦上）", roomID)
+								}
 
 								// 广播房间关闭消息给所有全局连接
 								h.hub.Broadcast <- hub.Message{
@@ -223,14 +228,19 @@ func (h *WebSocketHandler) HandleWebSocket(c *gin.Context) {
 					h.db.Model(&models.PracticeRoomMember{}).Where("room_id = ?", roomID).Count(&dbMemberCount)
 					hubMemberCount := h.hub.GetRoomMemberCount(roomID.String())
 
+					log.Printf("[OnLeave] 普通成员离开，房间 %s Hub成员数: %d, DB成员数: %d", roomID, hubMemberCount, dbMemberCount)
+
 					// 如果 Hub 和数据库都没有成员了（或只剩1人且那个人不在线），关闭房间
 					if hubMemberCount == 0 && dbMemberCount == 0 {
 						var room models.PracticeRoom
 						if err := h.db.First(&room, "id = ?", roomID).Error; err == nil {
 							room.IsActive = false
 							room.CurrentMembers = 0
-							h.db.Save(&room)
-							log.Printf("房间 %s 已关闭（没有在线成员）", roomID)
+							if err := h.db.Save(&room).Error; err != nil {
+								log.Printf("[OnLeave] ❌ 普通成员离开后更新房间 %s 状态失败: %v", roomID, err)
+							} else {
+								log.Printf("[OnLeave] ✅ 房间 %s 已关闭（没有在线成员）", roomID)
+							}
 
 							// 广播房间关闭消息
 							h.hub.Broadcast <- hub.Message{
@@ -246,8 +256,11 @@ func (h *WebSocketHandler) HandleWebSocket(c *gin.Context) {
 						if err := h.db.First(&room, "id = ?", roomID).Error; err == nil {
 							room.IsActive = false
 							room.CurrentMembers = 0
-							h.db.Save(&room)
-							log.Printf("房间 %s 已关闭（最后一名成员离线）", roomID)
+							if err := h.db.Save(&room).Error; err != nil {
+								log.Printf("[OnLeave] ❌ 最后一名成员离线后更新房间 %s 状态失败: %v", roomID, err)
+							} else {
+								log.Printf("[OnLeave] ✅ 房间 %s 已关闭（最后一名成员离线）", roomID)
+							}
 
 							// 广播房间关闭消息
 							h.hub.Broadcast <- hub.Message{
@@ -294,11 +307,13 @@ func (h *WebSocketHandler) monitorRoom(roomID uuid.UUID, client *hub.Client) {
 		select {
 		case <-ticker.C:
 			memberCount := h.hub.GetRoomMemberCount(roomID.String())
+			log.Printf("[monitorRoom] 监控房间 %s: Hub成员数: %d", roomID, memberCount)
 
 			// 如果 Hub 中没有成员，检查数据库
 			if memberCount == 0 {
 				var dbCount int64
 				h.db.Model(&models.PracticeRoomMember{}).Where("room_id = ?", roomID).Count(&dbCount)
+				log.Printf("[monitorRoom] 房间 %s Hub成员数为0，DB成员数: %d", roomID, dbCount)
 
 				if dbCount == 0 {
 					// 关闭房间
@@ -306,7 +321,11 @@ func (h *WebSocketHandler) monitorRoom(roomID uuid.UUID, client *hub.Client) {
 					if err := h.db.First(&room, "id = ?", roomID).Error; err == nil {
 						room.IsActive = false
 						room.CurrentMembers = 0
-						h.db.Save(&room)
+						if err := h.db.Save(&room).Error; err != nil {
+							log.Printf("[monitorRoom] ❌ 监控器更新房间 %s 状态失败: %v", roomID, err)
+						} else {
+							log.Printf("[monitorRoom] ✅ 房间 %s 已关闭（监控器检测到无成员）", roomID)
+						}
 					}
 					return
 				}
