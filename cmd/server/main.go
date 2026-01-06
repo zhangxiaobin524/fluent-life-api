@@ -116,6 +116,7 @@ func main() {
 				training.GET("/recommendations", trainingHandler.GetRecommendations)
 				training.GET("/progress-trend", trainingHandler.GetProgressTrend)
 				training.GET("/learning-partner-stats", trainingHandler.GetLearningPartnerStats)
+				training.GET("/learning-partners", trainingHandler.GetLearningPartners)
 			}
 
 			// AI 导师

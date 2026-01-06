@@ -204,6 +204,22 @@ func (h *TrainingHandler) GetLearningPartnerStats(c *gin.Context) {
 	response.Success(c, gin.H{"learning_partner_stats": stats}, "获取成功")
 }
 
+func (h *TrainingHandler) GetLearningPartners(c *gin.Context) {
+	userID, ok := utils.GetUserID(c)
+	if !ok {
+		response.Unauthorized(c, "未找到用户信息")
+		return
+	}
+
+	partners, err := h.trainingService.GetLearningPartners(userID)
+	if err != nil {
+		response.InternalError(c, "获取学习伙伴失败")
+		return
+	}
+
+	response.Success(c, gin.H{"partners": partners}, "获取成功")
+}
+
 
 
 

@@ -1,6 +1,8 @@
 package services
 
 import (
+	"fmt"
+	"math/rand"
 	"time"
 
 	"fluent-life-backend/internal/config"
@@ -330,9 +332,10 @@ type Recommendation struct {
 
 // GetRecommendations 获取个性化推荐
 func (s *TrainingService) GetRecommendations(userID uuid.UUID) ([]Recommendation, error) {
-	// 这里可以根据用户的训练数据、技能水平等进行复杂的推荐逻辑
-	// 目前先返回一些模拟数据
-	recommendations := []Recommendation{
+	// 初始化随机数种子
+	rand.Seed(time.Now().UnixNano())
+
+	allPossibleRecommendations := []Recommendation{
 		{
 			ID:          "rec1",
 			Title:       "深度冥想：放松身心",
@@ -357,9 +360,133 @@ func (s *TrainingService) GetRecommendations(userID uuid.UUID) ([]Recommendation
 			Description: "选择一篇你感兴趣的文章进行自由朗读，培养语感和表达流畅度。",
 			Type:        "practice",
 		},
+		{
+			ID:          "rec5",
+			Title:       "早晨冥想：开启活力",
+			Description: "每天早晨进行5分钟冥想，帮助你清醒头脑，迎接新的一天。",
+			Type:        "meditation",
+		},
+		{
+			ID:          "rec6",
+			Title:       "腹式呼吸：缓解焦虑",
+			Description: "学习并练习腹式呼吸，有效缓解紧张和焦虑情绪。",
+			Type:        "airflow",
+		},
+		{
+			ID:          "rec7",
+			Title:       "角色扮演：提升口语",
+			Description: "选择一个角色进行扮演，模拟真实场景对话，提升口语表达能力。",
+			Type:        "exposure",
+		},
+		{
+			ID:          "rec8",
+			Title:       "听力训练：磨练耳朵",
+			Description: "每天听一段英文播客或新闻，提高听力理解和语速适应能力。",
+			Type:        "practice",
+		},
+		{
+			ID:          "rec9",
+			Title:       "睡前冥想：改善睡眠",
+			Description: "睡前进行10分钟冥想，帮助你放松身心，获得更好的睡眠质量。",
+			Type:        "meditation",
+		},
+		{
+			ID:          "rec10",
+			Title:       "发音纠正：标准发音",
+			Description: "针对特定音标进行发音练习，确保你的发音清晰准确。",
+			Type:        "airflow",
+		},
 	}
+
+	// 获取用户技能水平
+	skillLevels, err := s.GetSkillLevels(userID)
+	if err != nil {
+		// 如果获取技能水平失败，返回随机推荐
+		numRecommendations := rand.Intn(3) + 3 // 3, 4, or 5
+		rand.Shuffle(len(allPossibleRecommendations), func(i, j int) {
+			allPossibleRecommendations[i], allPossibleRecommendations[j] = allPossibleRecommendations[j], allPossibleRecommendations[i]
+		})
+		return allPossibleRecommendations[:numRecommendations], nil
+	}
+
+	var weakestSkill string
+	minLevel := -1
+
+	// 找到最弱的技能
+	for skillType, level := range skillLevels {
+		if minLevel == -1 || level < minLevel {
+			minLevel = level
+			weakestSkill = skillType
+		}
+	}
+
+	var personalizedRecommendations []Recommendation
+	if weakestSkill != "" {
+		// 优先推荐最弱技能相关的练习
+		for _, rec := range allPossibleRecommendations {
+			if rec.Type == weakestSkill {
+				personalizedRecommendations = append(personalizedRecommendations, rec)
+			}
+		}
+	}
+
+	// 补充其他推荐，直到达到3-5个
+	numRecommendations := rand.Intn(3) + 3 // 3, 4, or 5
 	
-	return recommendations, nil
+	// 打乱所有可能的推荐，以便随机选择补充
+	rand.Shuffle(len(allPossibleRecommendations), func(i, j int) {
+		allPossibleRecommendations[i], allPossibleRecommendations[j] = allPossibleRecommendations[j], allPossibleRecommendations[i]
+	})
+
+	for _, rec := range allPossibleRecommendations {
+		if len(personalizedRecommendations) >= numRecommendations {
+			break
+		}
+		// 避免重复添加
+		found := false
+		for _, pRec := range personalizedRecommendations {
+			if pRec.ID == rec.ID {
+				found = true
+				break
+			}
+		}
+		if !found {
+			personalizedRecommendations = append(personalizedRecommendations, rec)
+		}
+	}
+
+	// 如果最终推荐数量超过numRecommendations，则截断
+	if len(personalizedRecommendations) > numRecommendations {
+		personalizedRecommendations = personalizedRecommendations[:numRecommendations]
+	}
+
+	// 如果推荐数量不足，再次打乱并补充
+	if len(personalizedRecommendations) < numRecommendations {
+		remaining := numRecommendations - len(personalizedRecommendations)
+		var tempAll []Recommendation
+		for _, rec := range allPossibleRecommendations {
+			found := false
+			for _, pRec := range personalizedRecommendations {
+				if pRec.ID == rec.ID {
+					found = true
+					break
+				}
+			}
+			if !found {
+				tempAll = append(tempAll, rec)
+			}
+		}
+		rand.Shuffle(len(tempAll), func(i, j int) {
+			tempAll[i], tempAll[j] = tempAll[j], tempAll[i]
+		})
+		if len(tempAll) > remaining {
+			personalizedRecommendations = append(personalizedRecommendations, tempAll[:remaining]...)
+		} else {
+			personalizedRecommendations = append(personalizedRecommendations, tempAll...)
+		}
+	}
+
+	return personalizedRecommendations, nil
 }
 
 // ProgressTrendData 结构体定义
@@ -398,11 +525,127 @@ type LearningPartnerStats struct {
 
 // GetLearningPartnerStats 获取学习伙伴统计数据
 func (s *TrainingService) GetLearningPartnerStats(userID uuid.UUID) (LearningPartnerStats, error) {
-	// 真实的学习伙伴统计需要复杂的逻辑，例如在线用户追踪、活跃度计算等
-	// 这里先返回模拟数据
+	var onlineCount int64
+	// 在线用户：过去30分钟内有登录记录的用户
+	if err := s.db.Model(&models.User{}).
+		Where("last_login_at IS NOT NULL AND last_login_at > ?", time.Now().Add(-30*time.Minute)).
+		Count(&onlineCount).Error; err != nil {
+		return LearningPartnerStats{}, err
+	}
+
+	var todayActive int64
+	// 今日活跃用户：今天有训练记录的独立用户
+	today := time.Now().Format("2006-01-02")
+	if err := s.db.Model(&models.TrainingRecord{}).
+		Where("DATE(timestamp) = ?", today).
+		Distinct("user_id").
+		Count(&todayActive).Error; err != nil {
+		return LearningPartnerStats{}, err
+	}
+
 	return LearningPartnerStats{
-		OnlineCount: 123, // 模拟在线人数
-		TodayActive: 456, // 模拟今日活跃人数
+		OnlineCount: int(onlineCount),
+		TodayActive: int(todayActive),
 	}, nil
+}
+
+// LearningPartner 结构体定义
+type LearningPartner struct {
+	ID       int    `json:"id"`
+	Name     string `json:"name"`
+	Avatar   string `json:"avatar"`
+	Status   string `json:"status"`   // "online" | "practicing" | "offline"
+	Activity string `json:"activity"` // e.g., "正在练习气流"
+	Progress int    `json:"progress"` // 0-100
+}
+
+// GetLearningPartners 获取学习伙伴列表
+func (s *TrainingService) GetLearningPartners(userID uuid.UUID) ([]LearningPartner, error) {
+	var users []models.User
+	// Fetch a random set of users, excluding the current user
+	if err := s.db.Where("id != ?", userID).Order("RANDOM()").Limit(5).Find(&users).Error; err != nil {
+		return nil, err
+	}
+
+	var partners []LearningPartner
+	for _, user := range users {
+		fmt.Printf("Processing learning partner: UserID=%s, Username=%s\n", user.ID, user.Username)
+		status := "offline"
+		activity := "暂无动态"
+		progress := 0
+
+		var latestRecord models.TrainingRecord
+		// Find the most recent training record for the user
+		s.db.Where("user_id = ?", user.ID).Order("timestamp DESC").First(&latestRecord)
+
+		if latestRecord.ID != uuid.Nil { // If a training record exists
+			fmt.Printf("  Found latest record for %s: Type=%s, Timestamp=%s\n", user.Username, latestRecord.Type, latestRecord.Timestamp)
+			timeSinceLastActivity := time.Since(latestRecord.Timestamp)
+
+			if timeSinceLastActivity < 10*time.Minute {
+				status = "practicing"
+				switch latestRecord.Type {
+				case "meditation":
+					activity = "冥想练习中"
+				case "airflow":
+					activity = "正在练习气流"
+				case "exposure":
+					activity = "脱敏训练"
+				case "practice":
+					activity = "实战练习"
+				default:
+					activity = "正在练习"
+				}
+				rand.Seed(time.Now().UnixNano() + int64(user.ID.ID()))
+				progress = rand.Intn(100) // Random progress for practicing users
+			} else if timeSinceLastActivity < 1*time.Hour {
+				status = "online"
+				activity = "在线"
+			} else {
+				status = "offline"
+				activity = "上次练习: " + formatDuration(timeSinceLastActivity) + "前"
+			}
+		} else {
+			fmt.Printf("  No training record found for %s. Checking last login.\n", user.Username)
+			// If no training record, check last login for online status
+			if user.LastLoginAt != nil && time.Since(*user.LastLoginAt) < 30*time.Minute {
+				status = "online"
+				activity = "在线"
+			}
+		}
+		fmt.Printf("  Final status for %s: Status=%s, Activity=%s\n", user.Username, status, activity)
+
+		// Ensure AvatarURL is not nil before dereferencing, and provide a fallback
+		avatar := ""
+		if user.Username != "" {
+			avatar = string([]rune(user.Username)[0])
+		}
+
+		partner := LearningPartner{
+			ID:       int(user.CreatedAt.Unix()), // Using CreatedAt as a pseudo-ID for now
+			Name:     user.Username,
+			Avatar:   avatar,
+			Status:   status,
+			Activity: activity,
+			Progress: progress,
+		}
+		partners = append(partners, partner)
+	}
+
+	return partners, nil
+}
+
+// Helper function to format duration
+func formatDuration(d time.Duration) string {
+	if d.Hours() >= 24 {
+		return fmt.Sprintf("%d天", int(d.Hours()/24))
+	}
+	if d.Hours() >= 1 {
+		return fmt.Sprintf("%d小时", int(d.Hours()))
+	}
+	if d.Minutes() >= 1 {
+		return fmt.Sprintf("%d分钟", int(d.Minutes()))
+	}
+	return "刚刚"
 }
 
